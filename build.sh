@@ -3,6 +3,11 @@ set -e
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
 
+# Load .env if present (keeps secrets out of the repo)
+if [ -f "$ROOT/.env" ]; then
+  export $(grep -v '^#' "$ROOT/.env" | xargs)
+fi
+
 echo "==> Building frontend..."
 cd "$ROOT/frontend"
 npm install --cache /tmp/npm-cache-75medium

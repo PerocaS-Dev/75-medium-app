@@ -45,6 +45,7 @@ class SecurityConfig(
             .authorizeHttpRequests { auth ->
                 auth
                     .requestMatchers("/api/auth/register", "/api/auth/login").permitAll()
+                    .requestMatchers(org.springframework.http.HttpMethod.GET, "/api/photos/*/image").permitAll()
                     .requestMatchers("/api/**").authenticated()
                     .anyRequest().permitAll()
             }

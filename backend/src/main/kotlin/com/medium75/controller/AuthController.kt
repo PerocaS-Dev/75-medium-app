@@ -2,6 +2,8 @@ package com.medium75.controller
 
 import com.medium75.service.UserService
 import jakarta.servlet.http.HttpServletRequest
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
 import org.springframework.security.authentication.AuthenticationManager
@@ -72,6 +74,20 @@ class AuthController(
             .setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, context)
 
         val user = userService.findByEmail(req.email)!!
+        return ResponseEntity.ok(
+            UserResponse(
+                id = user.id.toString(),
+                email = user.email,
+                displayName = user.displayName,
+                timeZone = user.timeZone,
+                popiaConsentAt = user.popiaConsentAt?.toString()
+            )
+        )
+    }
+
+    @PostMapping("/popia-consent")
+    fun recordPopiaConsent(@AuthenticationPrincipal principal: UserDetails): ResponseEntity<UserResponse> {
+        val user = userService.recordPopiaConsent(principal.username)
         return ResponseEntity.ok(
             UserResponse(
                 id = user.id.toString(),

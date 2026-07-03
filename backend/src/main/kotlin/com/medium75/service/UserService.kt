@@ -44,4 +44,16 @@ class UserService(
     fun findByEmail(email: String): User? = userRepository.findByEmail(email.lowercase().trim())
 
     fun findById(id: java.util.UUID): User? = userRepository.findById(id).orElse(null)
+
+    @Transactional
+    fun recordPopiaConsent(email: String): User {
+        val user = userRepository.findByEmail(email.lowercase().trim())
+            ?: throw NoSuchElementException("User not found")
+        if (user.popiaConsentAt == null) {
+            user.popiaConsentAt = java.time.Instant.now()
+            user.updatedAt = java.time.Instant.now()
+            userRepository.save(user)
+        }
+        return user
+    }
 }
