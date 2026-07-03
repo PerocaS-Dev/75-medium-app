@@ -1,0 +1,91 @@
+package com.medium75.service
+
+import com.medium75.model.*
+import com.medium75.repository.*
+import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
+import java.time.Instant
+import java.time.LocalDate
+import java.time.ZoneId
+import java.util.UUID
+
+@Service
+class DailyCheckOffService(
+    private val taskDefRepo: TaskDefinitionRepository,
+    private val dailyLogRepo: DailyLogRepository,
+    private val dailyTaskCheckRepo: DailyTaskCheckRepository,
+    private val challengeService: ChallengeService,
+    private val userRepo: com.medium75.repository.UserRepository
+) {
+    fun getTodayLog(challengeId: UUID, userId: UUID): DailyLog {
+        val challenge = challengeService.requireOwned(challengeId, userId)
+        require(challenge.status == ChallengeStatus.ACTIVE) { "Challenge is not active" }
+        val today = todayFor(challenge)
+        return getOrCreateLog(challenge, today)
+    }
+
+    fun getTodayChecks(challengeId: UUID, userId: UUID): List<DailyTaskCheck> {
+        val log = getTodayLog(challengeId, userId)
+        return dailyTaskCheckRepo.findAllByDailyLogId(log.id)
+    }
+
+    @Transactional
+    fun checkTask(challengeId: UUID, taskId: UUID, userId: UUID): DailyLog {
+        val challenge = challengeService.requireOwned(challengeId, userId)
+        require(challenge.status == ChallengeStatus.ACTIVE) { "Challenge is not active" }
+
+        val task = taskDefRepo.findById(taskId).orElseThrow { NoSuchElementException("Task not found") }
+        require(task.challengeId == challengeId) { "Task does not belong to this challenge" }
+        require(task.locked) { "Task is not locked — challenge has not started" }
+
+        val today = todayFor(challenge)
+        val log = getOrCreateLog(challenge, today)
+
+        if (!dailyTaskCheckRepo.existsByDailyLogIdAndTaskDefinitionId(log.id, taskId)) {
+            dailyTaskCheckRepo.save(DailyTaskCheck(dailyLogId = log.id, taskDefinitionId = taskId))
+        }
+
+        return refreshLogCounts(log, challengeId)
+    }
+
+    @Transactional
+    fun uncheckTask(challengeId: UUID, taskId: UUID, userId: UUID): DailyLog {
+        val challenge = challengeService.requireOwned(challengeId, userId)
+        require(challenge.status == ChallengeStatus.ACTIVE) { "Challenge is not active" }
+
+        val today = todayFor(challenge)
+        val log = dailyLogRepo.findByChallengeIdAndLogDate(challengeId, today)
+            ?: return getOrCreateLog(challenge, today)
+
+        dailyTaskCheckRepo.deleteByDailyLogIdAndTaskDefinitionId(log.id, taskId)
+        return refreshLogCounts(log, challengeId)
+    }
+
+    // ── internal helpers ─────────────────────────────────────────────────────
+
+    fun getOrCreateLog(challenge: Challenge, date: LocalDate): DailyLog {
+        return dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, date)
+            ?: dailyLogRepo.save(
+                DailyLog(
+                    challengeId     = challenge.id,
+                    logDate         = date,
+                    tasksTotalCount = taskDefRepo.countByChallengeId(challenge.id).toInt()
+                )
+            )
+    }
+
+    private fun refreshLogCounts(log: DailyLog, challengeId: UUID): DailyLog {
+        val checks = dailyTaskCheckRepo.findAllByDailyLogId(log.id)
+        val total  = taskDefRepo.countByChallengeId(challengeId).toInt()
+        log.tasksCompletedCount = checks.size
+        log.tasksTotalCount     = total
+        log.updatedAt           = Instant.now()
+        return dailyLogRepo.save(log)
+    }
+
+    fun todayFor(challenge: Challenge): LocalDate {
+        val tzString = userRepo.findById(challenge.userId).map { it.timeZone }.orElse("UTC")
+        val tz = runCatching { ZoneId.of(tzString) }.getOrDefault(ZoneId.of("UTC"))
+        return LocalDate.now(tz)
+    }
+}
