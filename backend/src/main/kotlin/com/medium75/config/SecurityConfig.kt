@@ -55,6 +55,14 @@ class SecurityConfig(
             .sessionManagement { session ->
                 session.maximumSessions(5)
             }
+            .logout { logout ->
+                logout.logoutUrl("/api/auth/logout")
+                logout.logoutSuccessHandler { _, response, _ ->
+                    response.status = HttpServletResponse.SC_OK
+                    response.contentType = MediaType.APPLICATION_JSON_VALUE
+                    ObjectMapper().writeValue(response.writer, mapOf("message" to "Logged out"))
+                }
+            }
 
         return http.build()
     }

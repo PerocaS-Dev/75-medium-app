@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@refinedev/core": "^5.0.12",
+    "@refinedev/simple-rest": "^6.0.1",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-router-dom": "^7.18.1"
