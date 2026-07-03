@@ -49,8 +49,11 @@ class ChallengeService(
         return challengeRepo.save(challenge)
     }
 
+    fun getById(challengeId: UUID): Challenge =
+        challengeRepo.findById(challengeId).orElseThrow { NoSuchElementException("Challenge not found") }
+
     fun requireOwned(challengeId: UUID, userId: UUID): Challenge {
-        val c = challengeRepo.findById(challengeId).orElseThrow { NoSuchElementException("Challenge not found") }
+        val c = getById(challengeId)
         require(c.userId == userId) { "Not your challenge" }
         return c
     }

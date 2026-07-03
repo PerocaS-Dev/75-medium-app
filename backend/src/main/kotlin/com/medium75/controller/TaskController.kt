@@ -3,7 +3,9 @@ package com.medium75.controller
 import com.medium75.model.DailyLog
 import com.medium75.model.DailyTaskCheck
 import com.medium75.model.TaskDefinition
+import com.medium75.service.ChallengeService
 import com.medium75.service.DailyCheckOffService
+import com.medium75.service.FriendshipService
 import com.medium75.service.TaskService
 import org.springframework.http.HttpStatus
 import org.springframework.security.core.annotation.AuthenticationPrincipal
@@ -34,7 +36,9 @@ private fun DailyTaskCheck.toResponse() = DailyTaskCheckResponse(taskDefinitionI
 class TaskController(
     private val taskService: TaskService,
     private val checkOffService: DailyCheckOffService,
-    private val userService: com.medium75.service.UserService
+    private val userService: com.medium75.service.UserService,
+    private val challengeService: ChallengeService,
+    private val friendshipService: FriendshipService
 ) {
     private fun currentUserId(principal: UserDetails): UUID =
         userService.findByEmail(principal.username)?.id
@@ -43,8 +47,15 @@ class TaskController(
     // ── task definitions ─────────────────────────────────────────────────────
 
     @GetMapping("/tasks")
-    fun listTasks(@PathVariable challengeId: UUID): List<TaskResponse> =
-        taskService.listTasks(challengeId).map { it.toResponse() }
+    fun listTasks(
+        @PathVariable challengeId: UUID,
+        @AuthenticationPrincipal principal: UserDetails
+    ): List<TaskResponse> {
+        val viewerId = currentUserId(principal)
+        val challenge = challengeService.getById(challengeId)
+        friendshipService.assertCanView(viewerId, challenge.userId)
+        return taskService.listTasks(challengeId).map { it.toResponse() }
+    }
 
     @PostMapping("/tasks")
     @ResponseStatus(HttpStatus.CREATED)
