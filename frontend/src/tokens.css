@@ -1,0 +1,60 @@
+/* 75 Medium — design tokens as CSS variables + fonts
+ * Import once at your app root:  import './tokens.css'
+ * (Load the fonts via the <link> in index.html — see comment block below.)
+ *
+ * <link rel="preconnect" href="https://fonts.googleapis.com">
+ * <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+ * <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&display=swap" rel="stylesheet">
+ */
+
+:root {
+  /* Warm neutral foundation — "clay" */
+  --clay-50:  #F8F3EA;
+  --clay-100: #F0E8DB;
+  --clay-200: #E5D9C7;
+  --clay-300: #D3C3AE;
+  --clay-400: #B9A48D;
+  --clay-500: #99826D;
+  --clay-600: #7A6553;
+  --clay-700: #5F4C3E;
+  --clay-800: #4A3B30;
+  --clay-900: #362A22;
+  --clay-950: #2A211B;
+  --paper:    #FFFDF8;
+
+  /* Pastel energy */
+  --blush-100: #FDEDF1;  --blush-200: #FBDCE5;  --blush-300: #F8C6D5;
+  --blush-400: #F2A7BD;  --blush-500: #E687A2;  --blush-600: #D6688A;
+  --lilac-100: #F3EEFB;  --lilac-200: #E8DEF7;  --lilac-300: #D8CAF0;
+  --lilac-400: #C2ADE6;  --lilac-500: #A98FD6;  --lilac-600: #8E6FC4;
+
+  /* Semantic states */
+  --sage-100: #E6F0E9;  --sage-300: #C2D9C9;  --sage-500: #8DB39A;  --sage-600: #6E967C;
+  --peach-100:#FBEBD8;  --peach-300:#F6D0A8;  --peach-500:#E8A971;  --peach-600:#D0894E;
+  --rust-100: #F6E3DC;  --rust-300: #E9BBAF;  --rust-500: #D08A7B;  --rust-600: #B96C5B;
+
+  /* Semantic aliases */
+  --bg:          var(--clay-50);
+  --surface:     var(--paper);
+  --text:        var(--clay-950);
+  --text-muted:  var(--clay-600);
+  --text-subtle: var(--clay-500);
+  --border:      var(--clay-200);
+  --primary:     var(--blush-500);
+  --primary-ink: var(--clay-950);
+  --accent:      var(--lilac-500);
+  --met:         var(--sage-500);
+  --buffer:      var(--peach-500);
+  --reset:       var(--rust-500);
+
+  /* Type */
+  --font-display: 'Newsreader', Georgia, serif;
+  --font-sans: 'Hanken Grotesk', ui-sans-serif, system-ui, sans-serif;
+
+  /* Elevation */
+  --shadow-soft: 0 1px 2px rgba(58,42,30,0.04), 0 4px 16px rgba(58,42,30,0.06);
+  --shadow-lift: 0 10px 34px rgba(58,42,30,0.12);
+
+  /* Radii */
+  --r-sm: 8px; --r-md: 12px; --r-lg: 18px; --r-xl: 22px; --r-2xl: 28px; --r-pill: 999px;
+}

@@ -1,0 +1,25 @@
+# ── macOS ────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# ── IDE ──────────────────────────────────────────────────────────────────────
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+
+# ── Internal / not for public repo ───────────────────────────────────────────
+docs/
+style-files/
+.claude/
+
+# ── Frontend build output (generated artifact — rebuild with build.sh) ────────
+backend/src/main/resources/static/*
+!backend/src/main/resources/static/.gitkeep
+
+# ── Misc ─────────────────────────────────────────────────────────────────────
+*.log
+.env
+.env.local
