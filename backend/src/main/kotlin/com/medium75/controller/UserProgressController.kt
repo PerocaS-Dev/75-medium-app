@@ -1,0 +1,58 @@
+package com.medium75.controller
+
+import com.medium75.service.ChallengeService
+import com.medium75.service.FriendshipService
+import com.medium75.service.StreakEngine
+import com.medium75.service.UserService
+import org.springframework.security.core.annotation.AuthenticationPrincipal
+import org.springframework.security.core.userdetails.UserDetails
+import org.springframework.web.bind.annotation.*
+import java.time.LocalDate
+import java.util.UUID
+
+data class UserProgressResponse(
+    val userId: UUID,
+    val displayName: String,
+    val currentStreak: Int,
+    val currentTier: Int,
+    val missBufferRemaining: Int,
+    val personalBestDays: Int,
+    val challengeStatus: String,
+    val startDate: LocalDate
+)
+
+@RestController
+@RequestMapping("/api/users")
+class UserProgressController(
+    private val friendshipService: FriendshipService,
+    private val challengeService: ChallengeService,
+    private val userService: UserService
+) {
+    private fun me(principal: UserDetails): UUID =
+        userService.findByEmail(principal.username)?.id
+            ?: throw NoSuchElementException("User not found")
+
+    @GetMapping("/{userId}/progress")
+    fun getProgress(
+        @PathVariable userId: UUID,
+        @AuthenticationPrincipal principal: UserDetails
+    ): UserProgressResponse {
+        val viewerId = me(principal)
+        friendshipService.assertCanView(viewerId, userId)
+
+        val user = userService.findById(userId) ?: throw NoSuchElementException("User not found")
+        val challenge = challengeService.getActiveChallenge(userId)
+            ?: throw NoSuchElementException("No active challenge")
+
+        return UserProgressResponse(
+            userId              = userId,
+            displayName         = user.displayName,
+            currentStreak       = challenge.currentStreak,
+            currentTier         = StreakEngine.currentTier(challenge.currentStreak),
+            missBufferRemaining = challenge.missBufferRemaining,
+            personalBestDays    = challenge.personalBestDays,
+            challengeStatus     = challenge.status.name,
+            startDate           = challenge.startDate
+        )
+    }
+}

@@ -42,4 +42,6 @@ class UserService(
     }
 
     fun findByEmail(email: String): User? = userRepository.findByEmail(email.lowercase().trim())
+
+    fun findById(id: java.util.UUID): User? = userRepository.findById(id).orElse(null)
 }
