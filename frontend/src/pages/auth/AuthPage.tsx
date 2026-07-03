@@ -1,84 +1,30 @@
 import { useState } from "react";
 import { useLogin } from "@refinedev/core";
 import { useNavigate } from "react-router-dom";
+import "./auth-page.css";
 
 type Tab = "signin" | "register";
 
-// ── Icons ──────────────────────────────────────────────────────────────────
-
-function EyeOpen() {
+function EyeIcon() {
   return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
       <circle cx="12" cy="12" r="3" />
     </svg>
   );
 }
 
-function EyeClosed() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
-}
-
-// ── Brand mark ─────────────────────────────────────────────────────────────
-
-function BrandIcon({ size = "lg" }: { size?: "sm" | "lg" }) {
-  const dims = size === "sm" ? "w-10 h-10 rounded-xl" : "w-16 h-16 rounded-2xl";
-  const text = size === "sm" ? "text-xl" : "text-2xl";
-  return (
-    <div className={`${dims} bg-gradient-to-br from-blush-300 to-lilac-400 flex items-center justify-center flex-shrink-0`}>
-      <span className={`font-display ${text} text-white font-semibold`}>75</span>
-    </div>
-  );
-}
-
-// ── Desktop left panel ─────────────────────────────────────────────────────
-
-function LeftPanel() {
-  return (
-    <div className="hidden md:flex md:w-[42%] lg:w-[440px] bg-gradient-to-b from-blush-200 to-lilac-300 flex-col p-12 min-h-screen">
-      <div className="flex items-center gap-3">
-        <BrandIcon size="sm" />
-        <span className="font-display text-lg text-clay-950">
-          75 <em className="italic text-blush-600">Medium</em>
-        </span>
-      </div>
-      <div className="mt-auto">
-        <h2 className="font-display text-[2.5rem] leading-[1.1] text-clay-950 mb-6">
-          75 days.<br />
-          Your rules.<br />
-          <em className="italic">Your people,<br />watching.</em>
-        </h2>
-        <p className="font-sans text-base text-clay-700 leading-relaxed max-w-[280px]">
-          The accountability-first tracker. Show up daily, alongside friends who can see you do it.
-        </p>
-      </div>
-    </div>
-  );
-}
-
-// ── Shared input class ─────────────────────────────────────────────────────
-
 const inputClass =
-  "w-full bg-white rounded-xl px-4 py-3.5 font-sans text-base text-clay-950 " +
-  "placeholder:text-clay-300 border border-clay-100 " +
-  "focus:outline-none focus:ring-2 focus:ring-blush-300 focus:border-transparent transition";
-
-// ── Error banner ───────────────────────────────────────────────────────────
+  "h-[52px] rounded-lg border border-clay-200 bg-paper px-4 text-base text-clay-950 shadow-soft outline-none " +
+  "placeholder:text-clay-400 focus:border-blush-400 focus:shadow-ring transition";
 
 function ErrorBanner({ msg }: { msg: string }) {
   return (
-    <div className="bg-rust-100 text-rust-600 rounded-lg px-4 py-3 font-sans text-sm">
+    <div className="rounded-lg bg-rust-50 border border-rust-200 px-4 py-3 text-sm text-rust-600">
       {msg}
     </div>
   );
 }
-
-// ── Sign-in form ───────────────────────────────────────────────────────────
 
 function SignInForm() {
   const { mutateAsync: login, isPending } = useLogin<{ email: string; password: string }>();
@@ -100,11 +46,11 @@ function SignInForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 mt-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
       {error && <ErrorBanner msg={error} />}
 
-      <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-sm text-clay-700">Email</label>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-caption font-semibold text-clay-600">Email</span>
         <input
           type="email"
           value={email}
@@ -114,11 +60,11 @@ function SignInForm() {
           placeholder="you@email.com"
           className={inputClass}
         />
-      </div>
+      </label>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-sm text-clay-700">Password</label>
-        <div className="relative">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-caption font-semibold text-clay-600">Password</span>
+        <div className="relative flex items-center">
           <input
             type={showPw ? "text" : "password"}
             value={password}
@@ -126,31 +72,29 @@ function SignInForm() {
             required
             autoComplete="current-password"
             placeholder="••••••••"
-            className={inputClass + " pr-12"}
+            className={inputClass + " w-full pr-11"}
           />
           <button
             type="button"
-            onClick={() => setShowPw((s) => !s)}
-            tabIndex={-1}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-clay-400 hover:text-clay-600 transition-colors"
+            onClick={() => setShowPw((v) => !v)}
+            aria-label={showPw ? "Hide password" : "Show password"}
+            className="absolute right-2 flex h-[34px] w-[34px] items-center justify-center text-clay-500 hover:text-clay-700"
           >
-            {showPw ? <EyeClosed /> : <EyeOpen />}
+            <EyeIcon />
           </button>
         </div>
-      </div>
+      </label>
 
       <button
         type="submit"
         disabled={isPending}
-        className="w-full mt-1 bg-blush-500 hover:bg-blush-600 active:scale-[0.98] disabled:opacity-50 text-clay-950 font-sans font-bold py-4 rounded-pill transition-all text-base"
+        className="mt-2 h-14 rounded-xl bg-blush-500 text-lg font-bold text-clay-950 shadow-soft transition hover:bg-blush-600 active:scale-[.99] disabled:opacity-50"
       >
         {isPending ? "Signing in…" : "Sign in"}
       </button>
     </form>
   );
 }
-
-// ── Register form ──────────────────────────────────────────────────────────
 
 function RegisterForm() {
   const navigate = useNavigate();
@@ -202,11 +146,11 @@ function RegisterForm() {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="flex flex-col gap-5 mt-6">
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
       {error && <ErrorBanner msg={error} />}
 
-      <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-sm text-clay-700">Name</label>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-caption font-semibold text-clay-600">Name</span>
         <input
           type="text"
           value={form.displayName}
@@ -216,10 +160,22 @@ function RegisterForm() {
           placeholder="What should friends call you?"
           className={inputClass}
         />
-      </div>
+      </label>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-sm text-clay-700">Email</label>
+      <label className="flex flex-col gap-1.5">
+        <span className="text-caption font-semibold text-clay-600">Time zone</span>
+        <input
+          type="text"
+          value={form.timeZone}
+          onChange={set("timeZone")}
+          required
+          placeholder="e.g. Africa/Johannesburg"
+          className={inputClass}
+        />
+      </label>
+
+      <label className="flex flex-col gap-1.5">
+        <span className="text-caption font-semibold text-clay-600">Email</span>
         <input
           type="email"
           value={form.email}
@@ -229,11 +185,11 @@ function RegisterForm() {
           placeholder="you@email.com"
           className={inputClass}
         />
-      </div>
+      </label>
 
-      <div className="flex flex-col gap-1.5">
-        <label className="font-sans text-sm text-clay-700">Password</label>
-        <div className="relative">
+      <label className="flex flex-col gap-1.5">
+        <span className="text-caption font-semibold text-clay-600">Password</span>
+        <div className="relative flex items-center">
           <input
             type={showPw ? "text" : "password"}
             value={form.password}
@@ -242,69 +198,29 @@ function RegisterForm() {
             autoComplete="new-password"
             minLength={8}
             placeholder="••••••••"
-            className={inputClass + " pr-12"}
+            className={inputClass + " w-full pr-11"}
           />
           <button
             type="button"
-            onClick={() => setShowPw((s) => !s)}
-            tabIndex={-1}
-            className="absolute right-4 top-1/2 -translate-y-1/2 text-clay-400 hover:text-clay-600 transition-colors"
+            onClick={() => setShowPw((v) => !v)}
+            aria-label={showPw ? "Hide password" : "Show password"}
+            className="absolute right-2 flex h-[34px] w-[34px] items-center justify-center text-clay-500 hover:text-clay-700"
           >
-            {showPw ? <EyeClosed /> : <EyeOpen />}
+            <EyeIcon />
           </button>
         </div>
-      </div>
+      </label>
 
       <button
         type="submit"
         disabled={isLoading}
-        className="w-full mt-1 bg-blush-500 hover:bg-blush-600 active:scale-[0.98] disabled:opacity-50 text-clay-950 font-sans font-bold py-4 rounded-pill transition-all text-base"
+        className="mt-2 h-14 rounded-xl bg-blush-500 text-lg font-bold text-clay-950 shadow-soft transition hover:bg-blush-600 active:scale-[.99] disabled:opacity-50"
       >
         {isLoading ? "Creating account…" : "Start my 75 days"}
       </button>
     </form>
   );
 }
-
-// ── Tab switcher ───────────────────────────────────────────────────────────
-
-function TabSwitcher({ tab, switchTab }: { tab: Tab; switchTab: (t: Tab) => void }) {
-  return (
-    <div className="flex bg-clay-100 rounded-pill p-1">
-      {(["signin", "register"] as Tab[]).map((t) => (
-        <button
-          key={t}
-          type="button"
-          onClick={() => switchTab(t)}
-          className={[
-            "flex-1 py-2.5 rounded-pill font-sans text-sm font-semibold transition-all",
-            tab === t
-              ? "bg-white shadow-soft text-clay-950"
-              : "text-clay-500 hover:text-clay-700",
-          ].join(" ")}
-        >
-          {t === "signin" ? "Sign in" : "Create account"}
-        </button>
-      ))}
-    </div>
-  );
-}
-
-// ── POPIA footer ───────────────────────────────────────────────────────────
-
-function POPIAText() {
-  return (
-    <p className="font-sans text-xs text-clay-400 text-center mt-6 leading-relaxed">
-      By continuing you agree to our{" "}
-      <span className="font-semibold text-clay-600">Terms</span>{" "}
-      &amp;{" "}
-      <span className="font-semibold text-clay-600">Privacy</span>.{" "}
-      POPIA-compliant.
-    </p>
-  );
-}
-
-// ── AuthPage ───────────────────────────────────────────────────────────────
 
 export function AuthPage({ initialTab }: { initialTab: Tab }) {
   const navigate = useNavigate();
@@ -315,43 +231,72 @@ export function AuthPage({ initialTab }: { initialTab: Tab }) {
     navigate(t === "signin" ? "/login" : "/register", { replace: true });
   };
 
-  const heading =
-    tab === "signin"
-      ? { title: "Welcome back", sub: "Pick up where you left off." }
-      : { title: "Create account", sub: "Design your 75 in a minute." };
+  const isSignUp = tab === "register";
+
+  const tabBtn = (active: boolean) =>
+    "flex-1 h-[38px] rounded-pill text-sm font-bold transition " +
+    (active ? "bg-paper text-clay-950 shadow-soft" : "bg-transparent text-clay-500");
 
   return (
-    <div className="min-h-screen flex">
-      <LeftPanel />
-
-      {/* Right panel — full width on mobile, flex-1 on desktop */}
-      <div className="flex-1 flex flex-col items-center justify-center bg-clay-50 md:bg-paper px-6 py-10 md:px-16">
-
-        {/* Mobile brand (hidden on desktop) */}
-        <div className="md:hidden text-center mb-8">
-          <div className="flex justify-center mb-3">
-            <BrandIcon size="lg" />
-          </div>
-          <h1 className="font-display text-2xl text-clay-950 mb-1">
-            75 <span className="italic text-blush-500">Medium</span>
-          </h1>
-          <p className="font-sans text-sm text-clay-400">{heading.sub}</p>
+    <div className="min-h-screen bg-clay-50 font-sans text-clay-950 md:flex">
+      {/* Brand panel — visible on md+ */}
+      <aside
+        className="relative hidden overflow-hidden md:flex md:w-[44%] md:flex-col md:justify-between p-12"
+        style={{ background: "linear-gradient(155deg, var(--blush-300), var(--lilac-300))" }}
+      >
+        <div className="font-display text-2xl font-semibold text-clay-950">
+          75 <span className="italic">Medium</span>
         </div>
+        <div>
+          <h1 className="font-display text-[40px] font-medium leading-[1.06] text-clay-950">
+            75 days.<br />Your rules.<br /><span className="italic">Your people, watching.</span>
+          </h1>
+          <p className="mt-4 max-w-[320px] text-base leading-relaxed text-clay-800">
+            The accountability-first tracker. Show up daily, alongside friends who can see you do it.
+          </p>
+        </div>
+        <div />
+      </aside>
 
-        <div className="w-full max-w-sm md:max-w-md">
-          {/* Desktop heading (hidden on mobile) */}
-          <div className="hidden md:block mb-8">
-            <h1 className="font-display text-3xl text-clay-950 mb-1">{heading.title}</h1>
-            <p className="font-sans text-sm text-clay-500">{heading.sub}</p>
+      {/* Form panel */}
+      <main className="flex flex-1 items-center justify-center px-6 py-16 md:p-10">
+        <div className="w-full max-w-[380px]">
+          {/* Mobile brand mark */}
+          <div className="mb-8 flex flex-col items-center gap-4 md:hidden">
+            <div
+              className="flex h-16 w-16 items-center justify-center rounded-xl shadow-lift"
+              style={{ background: "linear-gradient(150deg, var(--blush-400), var(--lilac-400))" }}
+            >
+              <span className="font-display text-3xl font-semibold text-white">75</span>
+            </div>
           </div>
 
-          <TabSwitcher tab={tab} switchTab={switchTab} />
+          <h2 className="font-display text-3xl font-medium text-clay-950">
+            {isSignUp ? "Create your account" : "Welcome back"}
+          </h2>
+          <p className="mt-1 mb-6 text-base text-clay-600">
+            {isSignUp ? "Design your next 75 days in a minute." : "Pick up where you left off."}
+          </p>
+
+          {/* Segmented toggle */}
+          <div className="mb-5 flex rounded-pill bg-clay-100 p-1">
+            <button type="button" onClick={() => switchTab("signin")} className={tabBtn(!isSignUp)}>
+              Sign in
+            </button>
+            <button type="button" onClick={() => switchTab("register")} className={tabBtn(isSignUp)}>
+              Create account
+            </button>
+          </div>
 
           {tab === "signin" ? <SignInForm /> : <RegisterForm />}
 
-          <POPIAText />
+          <p className="mt-6 text-center text-caption leading-relaxed text-clay-500">
+            By continuing you agree to the{" "}
+            <a href="#terms" className="font-semibold text-clay-700">Terms</a> &amp;{" "}
+            <a href="#privacy" className="font-semibold text-clay-700">Privacy</a>. POPIA-compliant.
+          </p>
         </div>
-      </div>
+      </main>
     </div>
   );
 }

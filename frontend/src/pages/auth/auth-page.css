@@ -1,0 +1,20 @@
+/* 75 Medium — Auth page styles
+ * Carries the one keyframe the component references (Tailwind's `animate-rise`
+ * is also defined in the token config; this file makes the component work even
+ * if you haven't merged the animation keyframes into tailwind.config.js yet).
+ */
+
+@keyframes rise {
+  from { transform: translateY(8px); opacity: 0; }
+  to   { transform: translateY(0);   opacity: 1; }
+}
+
+.animate-rise {
+  animation: rise 0.4s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+/* Warm focus ring for inputs (matches shadow-ring token) */
+.auth-focus-ring:focus {
+  border-color: var(--blush-400);
+  box-shadow: 0 0 0 4px rgba(230, 135, 162, 0.18);
+}
