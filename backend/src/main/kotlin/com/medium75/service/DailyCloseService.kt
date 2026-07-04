@@ -58,13 +58,13 @@ class DailyCloseService(
     private fun applyStreakLogic(challenge: Challenge, met: Boolean) {
         val state = StreakState(
             currentStreak       = challenge.currentStreak,
-            personalBestDays    = challenge.personalBestDays,
+            bestStreak          = challenge.bestStreak,
             missBufferRemaining = challenge.missBufferRemaining
         )
         val newState = StreakEngine.applyDay(state, met)
 
         challenge.currentStreak        = newState.currentStreak
-        challenge.personalBestDays     = newState.personalBestDays
+        challenge.bestStreak           = newState.bestStreak
         challenge.missBufferRemaining  = newState.missBufferRemaining
         challenge.lastStateChangeReason = newState.lastStateChangeReason
         challenge.updatedAt             = Instant.now()

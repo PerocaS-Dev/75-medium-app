@@ -51,7 +51,7 @@ export function TodayPage() {
           return;
         }
         setChallengeId(challenge.id);
-        setCurrentDay(challenge.currentDay || 1);
+        setCurrentDay(challenge.currentStreak || 1);
 
         const [taskList, checks] = await Promise.all([
           getTasks(challenge.id),

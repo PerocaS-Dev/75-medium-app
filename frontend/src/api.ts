@@ -12,11 +12,10 @@ function assertAuth(res: Response) {
 export interface ChallengeResponse {
   id: string;
   status: "PENDING" | "ACTIVE" | "COMPLETED" | "FAILED" | "ABANDONED";
-  currentDay: number;
   currentStreak: number;
   currentTier: number;
   missBufferRemaining: number;
-  personalBestDays: number;
+  bestStreak: number;
   startDate: string;
   lastStateChangeReason: string | null;
 }

@@ -4,7 +4,7 @@ import com.medium75.model.StateChangeReason
 
 data class StreakState(
     val currentStreak: Int,
-    val personalBestDays: Int,
+    val bestStreak: Int,
     val missBufferRemaining: Int,
     val lastStateChangeReason: StateChangeReason? = null
 )
@@ -31,7 +31,7 @@ object StreakEngine {
             val newStreak = state.currentStreak + 1
             val newTier   = currentTier(newStreak)
             val newBuffer = if (newTier != tier) freshBufferFor(newTier) else state.missBufferRemaining
-            StreakState(newStreak, maxOf(state.personalBestDays, newStreak), newBuffer, StateChangeReason.MET)
+            StreakState(newStreak, maxOf(state.bestStreak, newStreak), newBuffer, StateChangeReason.MET)
         } else {
             if (state.missBufferRemaining > 0) {
                 state.copy(
@@ -45,7 +45,7 @@ object StreakEngine {
                     else -> Pair(0,  StateChangeReason.RESET_TO_0)
                 }
                 val newTier = currentTier(fallback)
-                StreakState(fallback, state.personalBestDays, freshBufferFor(newTier), reason)
+                StreakState(fallback, state.bestStreak, freshBufferFor(newTier), reason)
             }
         }
     }

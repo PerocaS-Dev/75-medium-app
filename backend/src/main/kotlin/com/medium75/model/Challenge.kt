@@ -19,7 +19,7 @@ class Challenge(
     @Column(name = "start_date", nullable = false) val startDate: LocalDate,
     @Enumerated(EnumType.STRING) @Column(nullable = false) var status: ChallengeStatus = ChallengeStatus.PENDING,
     @Column(name = "current_streak", nullable = false) var currentStreak: Int = 0,
-    @Column(name = "personal_best_days", nullable = false) var personalBestDays: Int = 0,
+    @Column(name = "best_streak", nullable = false) var bestStreak: Int = 0,
     @Column(name = "miss_buffer_remaining", nullable = false) var missBufferRemaining: Int = 0,
     @Enumerated(EnumType.STRING) @Column(name = "last_state_change_reason") var lastStateChangeReason: StateChangeReason? = null,
     @Column(name = "created_at", nullable = false, updatable = false) val createdAt: Instant = Instant.now(),

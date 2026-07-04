@@ -16,10 +16,9 @@ data class ChallengeResponse(
     val startDate: LocalDate,
     val status: String,
     val currentStreak: Int,
-    val currentDay: Int,
     val currentTier: Int,
     val missBufferRemaining: Int,
-    val personalBestDays: Int,
+    val bestStreak: Int,
     val lastStateChangeReason: String?
 )
 
@@ -38,10 +37,9 @@ class ChallengeController(
         startDate             = startDate,
         status                = status.name,
         currentStreak         = currentStreak,
-        currentDay            = currentStreak,
         currentTier           = StreakEngine.currentTier(currentStreak),
         missBufferRemaining   = missBufferRemaining,
-        personalBestDays      = personalBestDays,
+        bestStreak            = bestStreak,
         lastStateChangeReason = lastStateChangeReason?.name
     )
 

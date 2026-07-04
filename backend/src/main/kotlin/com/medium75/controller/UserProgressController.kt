@@ -16,7 +16,7 @@ data class UserProgressResponse(
     val currentStreak: Int,
     val currentTier: Int,
     val missBufferRemaining: Int,
-    val personalBestDays: Int,
+    val bestStreak: Int,
     val challengeStatus: String,
     val startDate: LocalDate
 )
@@ -50,7 +50,7 @@ class UserProgressController(
             currentStreak       = challenge.currentStreak,
             currentTier         = StreakEngine.currentTier(challenge.currentStreak),
             missBufferRemaining = challenge.missBufferRemaining,
-            personalBestDays    = challenge.personalBestDays,
+            bestStreak          = challenge.bestStreak,
             challengeStatus     = challenge.status.name,
             startDate           = challenge.startDate
         )

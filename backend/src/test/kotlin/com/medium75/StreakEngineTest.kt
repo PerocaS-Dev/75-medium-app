@@ -35,7 +35,7 @@ class StreakEngineTest {
     @Test fun `perfect 75-day run reaches day 75`() {
         val result = applyDays(fresh(), allMet(75))
         assertEquals(75, result.currentStreak)
-        assertEquals(75, result.personalBestDays)
+        assertEquals(75, result.bestStreak)
         assertEquals(StateChangeReason.MET, result.lastStateChangeReason)
     }
 
@@ -51,7 +51,7 @@ class StreakEngineTest {
     @Test fun `personal best survives tier 1 reset`() {
         val at15 = applyDays(fresh(), allMet(15))
         val result = StreakEngine.applyDay(at15, false)
-        assertEquals(15, result.personalBestDays)
+        assertEquals(15, result.bestStreak)
         assertEquals(0, result.currentStreak)
     }
 
@@ -108,9 +108,9 @@ class StreakEngineTest {
 
     @Test fun `personal best survives tier 3 fall-back`() {
         var s = applyDays(fresh(), allMet(55))
-        val pb = s.personalBestDays
+        val pb = s.bestStreak
         repeat(4) { s = StreakEngine.applyDay(s, false) }
-        assertEquals(pb, s.personalBestDays)
+        assertEquals(pb, s.bestStreak)
         assertEquals(20, s.currentStreak)
     }
 
@@ -174,6 +174,6 @@ class StreakEngineTest {
         s = StreakEngine.applyDay(s, false) // use 1 of 1 buffer
         s = applyDays(s, allMet(10))        // 65→75
         assertEquals(75, s.currentStreak)
-        assertEquals(75, s.personalBestDays)
+        assertEquals(75, s.bestStreak)
     }
 }
