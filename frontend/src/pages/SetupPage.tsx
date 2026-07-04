@@ -7,6 +7,7 @@ import {
   deleteTask,
   reorderTasks,
   startChallenge,
+  ApiAuthError,
   type TaskResponse,
 } from "../api";
 
@@ -57,7 +58,8 @@ export function SetupPage() {
         setChallengeId(challenge.id);
         const taskList = await getTasks(challenge.id);
         setTasks(taskList.sort((a, b) => a.sortOrder - b.sortOrder));
-      } catch {
+      } catch (err) {
+        if (err instanceof ApiAuthError) { navigate("/login", { replace: true }); return; }
         setError("Failed to load. Please refresh.");
       } finally {
         setIsLoading(false);

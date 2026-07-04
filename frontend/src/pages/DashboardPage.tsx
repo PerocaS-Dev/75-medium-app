@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { getActiveChallenge, createChallenge } from "../api";
+import { getActiveChallenge, createChallenge, ApiAuthError } from "../api";
 
 function Spinner() {
   return (
@@ -33,7 +33,8 @@ export function DashboardPage() {
         } else {
           setError("Your challenge has ended. New challenges coming soon.");
         }
-      } catch {
+      } catch (err) {
+        if (err instanceof ApiAuthError) { navigate("/login", { replace: true }); return; }
         setError("Something went wrong. Please refresh.");
       }
     }

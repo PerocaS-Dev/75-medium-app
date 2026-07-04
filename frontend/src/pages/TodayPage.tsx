@@ -6,6 +6,7 @@ import {
   getTodayChecks,
   checkTask,
   uncheckTask,
+  ApiAuthError,
   type TaskResponse,
 } from "../api";
 
@@ -62,7 +63,8 @@ export function TodayPage() {
           .sort((a, b) => a.sortOrder - b.sortOrder)
           .map((t) => ({ ...t, checked: checkedIds.has(t.id) }));
         setTasks(merged);
-      } catch {
+      } catch (err) {
+        if (err instanceof ApiAuthError) { navigate("/login", { replace: true }); return; }
         setError("Failed to load. Please refresh.");
       } finally {
         setIsLoading(false);
