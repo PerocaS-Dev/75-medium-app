@@ -8,6 +8,7 @@ import { RegisterPage } from "./pages/auth/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { SetupPage } from "./pages/SetupPage";
 import { TodayPage } from "./pages/TodayPage";
+import { ProgressPage } from "./pages/ProgressPage";
 
 function Spinner() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/today" element={<TodayPage />} />
+              <Route path="/progress" element={<ProgressPage />} />
             </Route>
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
