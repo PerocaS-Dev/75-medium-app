@@ -15,6 +15,9 @@ import { FriendProgressPage } from "./pages/FriendProgressPage";
 import { JournalPage } from "./pages/JournalPage";
 import { JournalComposePage } from "./pages/JournalComposePage";
 import { FriendJournalPage } from "./pages/FriendJournalPage";
+import { PhotoPage } from "./pages/PhotoPage";
+import { PhotoUploadPage } from "./pages/PhotoUploadPage";
+import { FriendPhotosPage } from "./pages/FriendPhotosPage";
 
 function Spinner() {
   return (
@@ -57,12 +60,15 @@ export default function App() {
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/today" element={<TodayPage />} />
               <Route path="/progress" element={<ProgressPage />} />
+              <Route path="/photos" element={<PhotoPage />} />
+              <Route path="/photos/upload" element={<PhotoUploadPage />} />
               <Route path="/journal" element={<JournalPage />} />
               <Route path="/journal/new" element={<JournalComposePage />} />
               <Route path="/journal/:id/edit" element={<JournalComposePage />} />
               <Route path="/friends" element={<FriendsPage />} />
               <Route path="/friends/add" element={<FriendsAddPage />} />
               <Route path="/friends/:userId" element={<FriendProgressPage />} />
+              <Route path="/friends/:userId/photos" element={<FriendPhotosPage />} />
               <Route path="/friends/:userId/journal" element={<FriendJournalPage />} />
             </Route>
           </Route>

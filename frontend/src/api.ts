@@ -316,3 +316,64 @@ export async function removeReaction(entryId: string): Promise<void> {
   assertAuth(res);
   if (!res.ok) throw new Error("Failed to remove reaction");
 }
+
+// ── Photos ────────────────────────────────────────────────────────────────────
+
+export interface PhotoResponse {
+  id: string;
+  caption: string | null;
+  audienceType: "SELF" | "FRIENDS";
+  contentType: string;
+  createdAt: string;
+}
+
+export async function recordPopiaConsent(): Promise<void> {
+  const res = await fetch("/api/auth/popia-consent", { method: "POST" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to record consent");
+}
+
+export async function getMyPhotos(): Promise<PhotoResponse[]> {
+  const res = await fetch("/api/photos");
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load photos");
+  return res.json();
+}
+
+export async function getPhotoSignedUrl(id: string): Promise<string> {
+  const res = await fetch(`/api/photos/${id}/url`);
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to get signed URL");
+  const data: { url: string } = await res.json();
+  return data.url;
+}
+
+export async function uploadPhoto(
+  file: File,
+  caption: string | undefined,
+  audienceType: string
+): Promise<PhotoResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  if (caption) form.append("caption", caption);
+  form.append("audienceType", audienceType);
+  const res = await fetch("/api/photos", { method: "POST", body: form });
+  assertAuth(res);
+  if (res.status === 403) throw new ApiForbiddenError();
+  if (!res.ok) throw new Error("Failed to upload photo");
+  return res.json();
+}
+
+export async function getFriendPhotos(userId: string): Promise<PhotoResponse[]> {
+  const res = await fetch(`/api/users/${userId}/photos`);
+  assertAuth(res);
+  if (res.status === 403) throw new ApiForbiddenError();
+  if (!res.ok) throw new Error("Failed to load friend photos");
+  return res.json();
+}
+
+export async function deletePhoto(id: string): Promise<void> {
+  const res = await fetch(`/api/photos/${id}`, { method: "DELETE" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to delete photo");
+}

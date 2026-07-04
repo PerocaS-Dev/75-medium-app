@@ -148,14 +148,23 @@ export function FriendProgressPage() {
         <p className={`font-sans text-base font-semibold ${close.color}`}>{close.text}</p>
       </div>
 
-      {/* Journal link */}
-      <Link
-        to={`/friends/${userId}/journal`}
-        className="rounded-xl bg-paper border border-clay-200 shadow-soft px-5 py-4 flex items-center justify-between hover:border-clay-300 transition-colors"
-      >
-        <p className="font-sans text-base font-semibold text-clay-950">Journal</p>
-        <span className="font-sans text-base text-clay-400">→</span>
-      </Link>
+      {/* Photos + Journal links */}
+      <div className="grid grid-cols-2 gap-3">
+        <Link
+          to={`/friends/${userId}/photos`}
+          className="rounded-xl bg-paper border border-clay-200 shadow-soft px-4 py-4 flex items-center justify-between hover:border-clay-300 transition-colors"
+        >
+          <p className="font-sans text-base font-semibold text-clay-950">Photos</p>
+          <span className="font-sans text-base text-clay-400">→</span>
+        </Link>
+        <Link
+          to={`/friends/${userId}/journal`}
+          className="rounded-xl bg-paper border border-clay-200 shadow-soft px-4 py-4 flex items-center justify-between hover:border-clay-300 transition-colors"
+        >
+          <p className="font-sans text-base font-semibold text-clay-950">Journal</p>
+          <span className="font-sans text-base text-clay-400">→</span>
+        </Link>
+      </div>
 
     </div>
   );
