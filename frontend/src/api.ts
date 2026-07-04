@@ -217,3 +217,102 @@ export async function removeFriend(friendshipId: string): Promise<void> {
   assertAuth(res);
   if (!res.ok) throw new Error("Failed to remove friend");
 }
+
+// ── Journals ──────────────────────────────────────────────────────────────────
+
+export interface JournalEntryResponse {
+  id: string;
+  userId: string;
+  body: string;
+  entryDate: string;
+  audienceType: "SELF" | "FRIENDS";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ReactionResponse {
+  id: string;
+  userId: string;
+  type: "LIKE" | "FIRE" | "STRONG" | "LAUGH" | "CELEBRATE" | "SAD";
+  replyBody: string | null;
+  createdAt: string;
+}
+
+export async function getMyJournals(): Promise<JournalEntryResponse[]> {
+  const res = await fetch("/api/journals");
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load journals");
+  return res.json();
+}
+
+export async function createJournalEntry(
+  body: string,
+  entryDate: string,
+  audienceType: string
+): Promise<JournalEntryResponse> {
+  const res = await fetch("/api/journals", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ body, entryDate, audienceType }),
+  });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to create journal entry");
+  return res.json();
+}
+
+export async function updateJournalEntry(
+  id: string,
+  body?: string,
+  audienceType?: string
+): Promise<JournalEntryResponse> {
+  const res = await fetch(`/api/journals/${id}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ body, audienceType }),
+  });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to update journal entry");
+  return res.json();
+}
+
+export async function deleteJournalEntry(id: string): Promise<void> {
+  const res = await fetch(`/api/journals/${id}`, { method: "DELETE" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to delete journal entry");
+}
+
+export async function getFriendJournals(userId: string): Promise<JournalEntryResponse[]> {
+  const res = await fetch(`/api/users/${userId}/journals`);
+  assertAuth(res);
+  if (res.status === 403) throw new ApiForbiddenError();
+  if (!res.ok) throw new Error("Failed to load friend journals");
+  return res.json();
+}
+
+export async function getReactions(entryId: string): Promise<ReactionResponse[]> {
+  const res = await fetch(`/api/journals/${entryId}/reactions`);
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load reactions");
+  return res.json();
+}
+
+export async function addReaction(
+  entryId: string,
+  type: string,
+  replyBody?: string
+): Promise<ReactionResponse> {
+  const res = await fetch(`/api/journals/${entryId}/reactions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type, replyBody }),
+  });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to add reaction");
+  return res.json();
+}
+
+export async function removeReaction(entryId: string): Promise<void> {
+  const res = await fetch(`/api/journals/${entryId}/reactions`, { method: "DELETE" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to remove reaction");
+}

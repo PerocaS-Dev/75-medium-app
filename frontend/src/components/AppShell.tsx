@@ -19,6 +19,15 @@ function StreakIcon() {
   );
 }
 
+function JournalIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+    </svg>
+  );
+}
+
 function FriendsIcon() {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -30,7 +39,7 @@ function FriendsIcon() {
   );
 }
 
-const TAB_ROUTES = ["/today", "/progress", "/friends", "/friends/add"];
+const TAB_PREFIXES = ["/today", "/progress", "/journal", "/friends"];
 
 export function AppShell() {
   const { mutateAsync: logout } = useLogout();
@@ -43,14 +52,14 @@ export function AppShell() {
     navigate("/login");
   };
 
-  const showTabs = TAB_ROUTES.some((r) => location.pathname === r || location.pathname.startsWith("/friends/"));
+  const showTabs = TAB_PREFIXES.some(
+    (p) => location.pathname === p || location.pathname.startsWith(p + "/")
+  );
 
   const tabCls = (path: string) => {
-    const active = path === "/friends"
-      ? location.pathname.startsWith("/friends")
-      : location.pathname === path;
+    const active = location.pathname === path || location.pathname.startsWith(path + "/");
     return [
-      "flex flex-col items-center gap-1 px-6 py-2 transition-colors",
+      "flex flex-col items-center gap-1 px-3 py-2 transition-colors",
       active ? "text-clay-950" : "text-clay-400 hover:text-clay-600",
     ].join(" ");
   };
@@ -92,6 +101,10 @@ export function AppShell() {
             <Link to="/progress" className={tabCls("/progress")}>
               <StreakIcon />
               <span className="text-caption font-semibold">Progress</span>
+            </Link>
+            <Link to="/journal" className={tabCls("/journal")}>
+              <JournalIcon />
+              <span className="text-caption font-semibold">Journal</span>
             </Link>
             <Link to="/friends" className={tabCls("/friends")}>
               <FriendsIcon />
