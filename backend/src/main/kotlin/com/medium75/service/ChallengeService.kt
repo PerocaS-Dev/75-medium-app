@@ -17,16 +17,16 @@ class ChallengeService(
     private val taskDefRepo: TaskDefinitionRepository
 ) {
     fun getActiveChallenge(userId: UUID): Challenge? =
-        challengeRepo.findByUserIdAndStatus(userId, ChallengeStatus.ACTIVE)
-            ?: challengeRepo.findByUserIdAndStatus(userId, ChallengeStatus.PENDING)
+        challengeRepo.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ChallengeStatus.ACTIVE)
+            ?: challengeRepo.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ChallengeStatus.PENDING)
 
     fun getChallengeHistory(userId: UUID): List<Challenge> =
         challengeRepo.findAllByUserId(userId)
 
     @Transactional
     fun createChallenge(userId: UUID): Challenge {
-        val existing = challengeRepo.findByUserIdAndStatus(userId, ChallengeStatus.ACTIVE)
-            ?: challengeRepo.findByUserIdAndStatus(userId, ChallengeStatus.PENDING)
+        val existing = challengeRepo.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ChallengeStatus.ACTIVE)
+            ?: challengeRepo.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ChallengeStatus.PENDING)
         require(existing == null) { "User already has an active or pending challenge" }
 
         return challengeRepo.save(

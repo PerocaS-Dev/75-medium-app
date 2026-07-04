@@ -2,6 +2,7 @@ package com.medium75.service
 
 import com.medium75.model.*
 import com.medium75.repository.*
+import org.springframework.dao.DataIntegrityViolationException
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.Instant
@@ -64,14 +65,19 @@ class DailyCheckOffService(
     // ── internal helpers ─────────────────────────────────────────────────────
 
     fun getOrCreateLog(challenge: Challenge, date: LocalDate): DailyLog {
-        return dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, date)
-            ?: dailyLogRepo.save(
+        dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, date)?.let { return it }
+        return try {
+            dailyLogRepo.save(
                 DailyLog(
                     challengeId     = challenge.id,
                     logDate         = date,
                     tasksTotalCount = taskDefRepo.countByChallengeId(challenge.id).toInt()
                 )
             )
+        } catch (e: DataIntegrityViolationException) {
+            // Concurrent request already inserted the row — just fetch it
+            dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, date) ?: throw e
+        }
     }
 
     private fun refreshLogCounts(log: DailyLog, challengeId: UUID): DailyLog {

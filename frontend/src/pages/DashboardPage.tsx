@@ -1,20 +1,52 @@
-import { useGetIdentity } from "@refinedev/core";
-import type { UserIdentity } from "../authProvider";
+import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { getActiveChallenge, createChallenge } from "../api";
 
-export function DashboardPage() {
-  const { data: identity } = useGetIdentity<UserIdentity>();
-
+function Spinner() {
   return (
-    <div className="animate-rise">
-      <p className="font-sans text-sm text-clay-400 tracking-widest uppercase mb-1">
-        Dashboard
-      </p>
-      <h1 className="font-display text-3xl text-clay-950 mb-4">
-        Hey, {identity?.displayName ?? "…"}
-      </h1>
-      <p className="font-sans text-base text-clay-500">
-        Your challenge is waiting. More coming soon.
-      </p>
+    <div className="flex items-center justify-center py-20">
+      <div className="w-5 h-5 rounded-full border-2 border-blush-400 border-t-transparent animate-spin" />
     </div>
   );
+}
+
+export function DashboardPage() {
+  const navigate = useNavigate();
+  const [error, setError] = useState<string | null>(null);
+  const ran = useRef(false);
+
+  useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
+    async function route() {
+      try {
+        let challenge = await getActiveChallenge();
+
+        if (!challenge) {
+          challenge = await createChallenge();
+        }
+
+        if (challenge.status === "PENDING") {
+          navigate("/setup", { replace: true });
+        } else if (challenge.status === "ACTIVE") {
+          navigate("/today", { replace: true });
+        } else {
+          setError("Your challenge has ended. New challenges coming soon.");
+        }
+      } catch {
+        setError("Something went wrong. Please refresh.");
+      }
+    }
+    route();
+  }, [navigate]);
+
+  if (error) {
+    return (
+      <div className="animate-rise">
+        <p className="font-sans text-base text-clay-500">{error}</p>
+      </div>
+    );
+  }
+
+  return <Spinner />;
 }

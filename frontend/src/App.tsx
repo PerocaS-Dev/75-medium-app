@@ -6,6 +6,8 @@ import { AppShell } from "./components/AppShell";
 import { LoginPage } from "./pages/auth/LoginPage";
 import { RegisterPage } from "./pages/auth/RegisterPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { SetupPage } from "./pages/SetupPage";
+import { TodayPage } from "./pages/TodayPage";
 
 function Spinner() {
   return (
@@ -45,6 +47,8 @@ export default function App() {
           <Route element={<ProtectedRoute />}>
             <Route element={<AppShell />}>
               <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/setup" element={<SetupPage />} />
+              <Route path="/today" element={<TodayPage />} />
             </Route>
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />

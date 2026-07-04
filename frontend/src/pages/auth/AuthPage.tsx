@@ -98,6 +98,7 @@ function SignInForm() {
 
 function RegisterForm() {
   const navigate = useNavigate();
+  const { mutateAsync: login } = useLogin<{ email: string; password: string }>();
   const [form, setForm] = useState({
     displayName: "",
     email: "",
@@ -129,12 +130,8 @@ function RegisterForm() {
         setError("Something went wrong. Please try again.");
         return;
       }
-      const loginRes = await fetch("/api/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: form.email, password: form.password }),
-      });
-      if (!loginRes.ok) {
+      const loginResult = await login({ email: form.email, password: form.password });
+      if (!loginResult.success) {
         navigate("/login");
         return;
       }
