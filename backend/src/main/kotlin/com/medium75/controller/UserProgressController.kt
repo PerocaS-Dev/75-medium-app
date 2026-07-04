@@ -1,14 +1,21 @@
 package com.medium75.controller
 
+import com.medium75.model.StateChangeReason
 import com.medium75.service.ChallengeService
 import com.medium75.service.FriendshipService
 import com.medium75.service.StreakEngine
 import com.medium75.service.UserService
+import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
 import java.util.UUID
+
+data class UserProfileResponse(
+    val id: UUID,
+    val displayName: String
+)
 
 data class UserProgressResponse(
     val userId: UUID,
@@ -17,6 +24,7 @@ data class UserProgressResponse(
     val currentTier: Int,
     val missBufferRemaining: Int,
     val bestStreak: Int,
+    val lastStateChangeReason: String?,
     val challengeStatus: String,
     val startDate: LocalDate
 )
@@ -32,27 +40,49 @@ class UserProgressController(
         userService.findByEmail(principal.username)?.id
             ?: throw NoSuchElementException("User not found")
 
+    @GetMapping("/lookup")
+    fun lookupByEmail(
+        @RequestParam email: String,
+        @AuthenticationPrincipal principal: UserDetails
+    ): ResponseEntity<UserProfileResponse> {
+        val user = userService.findByEmail(email.trim().lowercase())
+            ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(UserProfileResponse(id = user.id, displayName = user.displayName))
+    }
+
+    @GetMapping("/{userId}/profile")
+    fun getProfile(
+        @PathVariable userId: UUID,
+        @AuthenticationPrincipal principal: UserDetails
+    ): ResponseEntity<UserProfileResponse> {
+        val user = userService.findById(userId)
+            ?: return ResponseEntity.notFound().build()
+        return ResponseEntity.ok(UserProfileResponse(id = user.id, displayName = user.displayName))
+    }
+
     @GetMapping("/{userId}/progress")
     fun getProgress(
         @PathVariable userId: UUID,
         @AuthenticationPrincipal principal: UserDetails
-    ): UserProgressResponse {
+    ): ResponseEntity<UserProgressResponse> {
         val viewerId = me(principal)
         friendshipService.assertCanView(viewerId, userId)
 
-        val user = userService.findById(userId) ?: throw NoSuchElementException("User not found")
+        val user = userService.findById(userId)
+            ?: return ResponseEntity.notFound().build()
         val challenge = challengeService.getActiveChallenge(userId)
-            ?: throw NoSuchElementException("No active challenge")
+            ?: return ResponseEntity.notFound().build()
 
-        return UserProgressResponse(
-            userId              = userId,
-            displayName         = user.displayName,
-            currentStreak       = challenge.currentStreak,
-            currentTier         = StreakEngine.currentTier(challenge.currentStreak),
-            missBufferRemaining = challenge.missBufferRemaining,
-            bestStreak          = challenge.bestStreak,
-            challengeStatus     = challenge.status.name,
-            startDate           = challenge.startDate
-        )
+        return ResponseEntity.ok(UserProgressResponse(
+            userId                = userId,
+            displayName           = user.displayName,
+            currentStreak         = challenge.currentStreak,
+            currentTier           = StreakEngine.currentTier(challenge.currentStreak),
+            missBufferRemaining   = challenge.missBufferRemaining,
+            bestStreak            = challenge.bestStreak,
+            lastStateChangeReason = challenge.lastStateChangeReason?.name,
+            challengeStatus       = challenge.status.name,
+            startDate             = challenge.startDate
+        ))
     }
 }

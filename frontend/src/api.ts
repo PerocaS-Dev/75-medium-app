@@ -5,8 +5,16 @@ export class ApiAuthError extends Error {
   }
 }
 
+export class ApiForbiddenError extends Error {
+  constructor() {
+    super("Forbidden");
+    this.name = "ApiForbiddenError";
+  }
+}
+
 function assertAuth(res: Response) {
   if (res.status === 401) throw new ApiAuthError();
+  if (res.status === 403) throw new ApiForbiddenError();
 }
 
 export interface ChallengeResponse {
@@ -113,4 +121,99 @@ export async function uncheckTask(challengeId: string, taskId: string): Promise<
   });
   assertAuth(res);
   if (!res.ok) throw new Error("Failed to uncheck task");
+}
+
+// ── Friends ──────────────────────────────────────────────────────────────────
+
+export interface UserProfileResponse {
+  id: string;
+  displayName: string;
+}
+
+export interface UserProgressResponse {
+  userId: string;
+  displayName: string;
+  currentStreak: number;
+  currentTier: number;
+  missBufferRemaining: number;
+  bestStreak: number;
+  lastStateChangeReason: string | null;
+  challengeStatus: string;
+  startDate: string;
+}
+
+export interface FriendshipResponse {
+  id: string;
+  requesterId: string;
+  addresseeId: string;
+  status: "PENDING" | "ACCEPTED" | "BLOCKED";
+  createdAt: string;
+}
+
+export async function lookupUserByEmail(email: string): Promise<UserProfileResponse | null> {
+  const res = await fetch(`/api/users/lookup?email=${encodeURIComponent(email)}`);
+  assertAuth(res);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Lookup failed");
+  return res.json();
+}
+
+export async function getUserProfile(userId: string): Promise<UserProfileResponse | null> {
+  const res = await fetch(`/api/users/${userId}/profile`);
+  assertAuth(res);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Failed to get profile");
+  return res.json();
+}
+
+export async function getFriendProgress(userId: string): Promise<UserProgressResponse | null> {
+  const res = await fetch(`/api/users/${userId}/progress`);
+  assertAuth(res);
+  if (res.status === 404) return null;
+  if (!res.ok) throw new Error("Failed to get progress");
+  return res.json();
+}
+
+export async function getFriends(): Promise<FriendshipResponse[]> {
+  const res = await fetch("/api/friends");
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load friends");
+  return res.json();
+}
+
+export async function getIncomingRequests(): Promise<FriendshipResponse[]> {
+  const res = await fetch("/api/friends/requests");
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load requests");
+  return res.json();
+}
+
+export async function sendFriendRequest(addresseeId: string): Promise<FriendshipResponse> {
+  const res = await fetch("/api/friends/request", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ addresseeId }),
+  });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to send request");
+  return res.json();
+}
+
+export async function acceptRequest(friendshipId: string): Promise<FriendshipResponse> {
+  const res = await fetch(`/api/friends/${friendshipId}/accept`, { method: "POST" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to accept request");
+  return res.json();
+}
+
+export async function declineRequest(friendshipId: string): Promise<void> {
+  const res = await fetch(`/api/friends/${friendshipId}/decline`, { method: "POST" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to decline request");
+}
+
+export async function removeFriend(friendshipId: string): Promise<void> {
+  const res = await fetch(`/api/friends/${friendshipId}`, { method: "DELETE" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to remove friend");
 }

@@ -9,6 +9,9 @@ import { DashboardPage } from "./pages/DashboardPage";
 import { SetupPage } from "./pages/SetupPage";
 import { TodayPage } from "./pages/TodayPage";
 import { ProgressPage } from "./pages/ProgressPage";
+import { FriendsPage } from "./pages/FriendsPage";
+import { FriendsAddPage } from "./pages/FriendsAddPage";
+import { FriendProgressPage } from "./pages/FriendProgressPage";
 
 function Spinner() {
   return (
@@ -51,6 +54,9 @@ export default function App() {
               <Route path="/setup" element={<SetupPage />} />
               <Route path="/today" element={<TodayPage />} />
               <Route path="/progress" element={<ProgressPage />} />
+              <Route path="/friends" element={<FriendsPage />} />
+              <Route path="/friends/add" element={<FriendsAddPage />} />
+              <Route path="/friends/:userId" element={<FriendProgressPage />} />
             </Route>
           </Route>
           <Route path="/" element={<Navigate to="/dashboard" replace />} />
