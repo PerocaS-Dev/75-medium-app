@@ -6,5 +6,6 @@ import java.util.UUID
 
 interface TaskDefinitionRepository : JpaRepository<TaskDefinition, UUID> {
     fun findByChallengeIdOrderBySortOrder(challengeId: UUID): List<TaskDefinition>
+    fun findAllByChallengeId(challengeId: UUID): List<TaskDefinition>
     fun countByChallengeId(challengeId: UUID): Long
 }
