@@ -3,7 +3,6 @@ package com.medium75.seed
 import com.medium75.model.*
 import com.medium75.repository.ChallengeRepository
 import com.medium75.repository.DailyLogRepository
-import com.medium75.repository.DailyTaskCheckRepository
 import com.medium75.repository.FriendshipRepository
 import com.medium75.repository.TaskDefinitionRepository
 import com.medium75.repository.UserRepository
@@ -14,6 +13,7 @@ import org.springframework.boot.ApplicationArguments
 import org.springframework.boot.ApplicationRunner
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty
 import org.springframework.context.annotation.Profile
+import org.springframework.jdbc.core.JdbcTemplate
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Component
 import java.time.Instant
@@ -28,8 +28,8 @@ class SeedRunner(
     private val challengeRepo: ChallengeRepository,
     private val taskDefRepo: TaskDefinitionRepository,
     private val dailyLogRepo: DailyLogRepository,
-    private val dailyTaskCheckRepo: DailyTaskCheckRepository,
     private val friendshipRepo: FriendshipRepository,
+    private val jdbc: JdbcTemplate,
     @Value("\${PGHOST:localhost}") private val pgHost: String,
     @Value("\${seed.main-user-email:}") private val mainUserEmail: String,
 ) : ApplicationRunner {
@@ -163,27 +163,54 @@ class SeedRunner(
     }
 
     private fun clearExistingSeeds() {
-        val existing = userRepo.findAll().filter { it.email.endsWith(SEED_EMAIL_SUFFIX) }
-        if (existing.isEmpty()) return
+        val count = jdbc.queryForObject(
+            "SELECT COUNT(*) FROM users WHERE email LIKE ?", Int::class.java, "%$SEED_EMAIL_SUFFIX"
+        ) ?: 0
+        if (count == 0) return
 
-        for (user in existing) {
-            val challenges = challengeRepo.findAllByUserId(user.id)
-            for (ch in challenges) {
-                val logs = dailyLogRepo.findAllByChallengeIdOrderByLogDate(ch.id)
-                for (log in logs) {
-                    dailyTaskCheckRepo.deleteAll(dailyTaskCheckRepo.findAllByDailyLogId(log.id))
-                }
-                dailyLogRepo.deleteAll(logs)
-                taskDefRepo.deleteAll(taskDefRepo.findAllByChallengeId(ch.id))
-            }
-            challengeRepo.deleteAll(challenges)
+        // Delete in FK-safe order via raw SQL
+        jdbc.update("""
+            DELETE FROM daily_task_checks
+            WHERE daily_log_id IN (
+                SELECT dl.id FROM daily_logs dl
+                JOIN challenges c ON c.id = dl.challenge_id
+                JOIN users u ON u.id = c.user_id
+                WHERE u.email LIKE ?
+            )
+        """, "%$SEED_EMAIL_SUFFIX")
 
-            val friendships = friendshipRepo.findAll()
-                .filter { it.requesterId == user.id || it.addresseeId == user.id }
-            friendshipRepo.deleteAll(friendships)
-        }
-        userRepo.deleteAll(existing)
-        println("  Cleared ${existing.size} existing seed user(s)")
+        jdbc.update("""
+            DELETE FROM daily_logs
+            WHERE challenge_id IN (
+                SELECT c.id FROM challenges c
+                JOIN users u ON u.id = c.user_id
+                WHERE u.email LIKE ?
+            )
+        """, "%$SEED_EMAIL_SUFFIX")
+
+        jdbc.update("""
+            DELETE FROM task_definitions
+            WHERE challenge_id IN (
+                SELECT c.id FROM challenges c
+                JOIN users u ON u.id = c.user_id
+                WHERE u.email LIKE ?
+            )
+        """, "%$SEED_EMAIL_SUFFIX")
+
+        jdbc.update("""
+            DELETE FROM challenges
+            WHERE user_id IN (SELECT id FROM users WHERE email LIKE ?)
+        """, "%$SEED_EMAIL_SUFFIX")
+
+        jdbc.update("""
+            DELETE FROM friendships
+            WHERE requester_id IN (SELECT id FROM users WHERE email LIKE ?)
+               OR addressee_id  IN (SELECT id FROM users WHERE email LIKE ?)
+        """, "%$SEED_EMAIL_SUFFIX", "%$SEED_EMAIL_SUFFIX")
+
+        jdbc.update("DELETE FROM users WHERE email LIKE ?", "%$SEED_EMAIL_SUFFIX")
+
+        println("  Cleared $count existing seed user(s)")
     }
 
     private fun seedUser(scenario: ScenarioUser): Pair<User, StreakState> {
