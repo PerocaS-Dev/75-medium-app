@@ -2,49 +2,25 @@ import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getActiveChallenge,
-  getTasks,
-  getTodayChecks,
   ApiAuthError,
   type ChallengeResponse,
 } from "../api";
+import "../styles/momentum-progress.css";
 
 const TIER_META = [
-  { tier: 1, label: "Tier 1", range: "Days 1–20",  maxBuffer: 0 },
-  { tier: 2, label: "Tier 2", range: "Days 21–39", maxBuffer: 3 },
-  { tier: 3, label: "Tier 3", range: "Days 40–64", maxBuffer: 3 },
-  { tier: 4, label: "Tier 4", range: "Days 65–75", maxBuffer: 1 },
+  { tier: 1, label: "Tier 1", range: "Days 1–20",  maxBuffer: 0, start: 1,  end: 20 },
+  { tier: 2, label: "Tier 2", range: "Days 21–39", maxBuffer: 3, start: 21, end: 39 },
+  { tier: 3, label: "Tier 3", range: "Days 40–64", maxBuffer: 3, start: 40, end: 64 },
+  { tier: 4, label: "Tier 4", range: "Days 65–75", maxBuffer: 1, start: 65, end: 75 },
 ];
 
-function lastCloseText(reason: string | null, bufferLeft: number): { text: string; color: string } {
-  switch (reason) {
-    case "MET":                return { text: "Day met",                    color: "text-sage-600" };
-    case "MISS_WITHIN_BUFFER": return { text: `Miss used · ${bufferLeft} left`, color: "text-peach-600" };
-    case "RESET_TO_0":         return { text: "Reset — back to day 1",     color: "text-rust-600" };
-    case "FELL_BACK_TO_20":    return { text: "Fell back to day 20",       color: "text-rust-600" };
-    case "FELL_BACK_TO_40":    return { text: "Fell back to day 40",       color: "text-rust-600" };
-    default:                   return { text: "No days closed yet",        color: "text-clay-400" };
-  }
-}
+const CONFETTI_COUNT = 24;
 
-function BufferDots({ remaining, max }: { remaining: number; max: number }) {
-  if (max === 0) {
-    return <p className="font-sans text-sm font-semibold text-clay-500">Zero tolerance</p>;
-  }
-  const filledColor =
-    remaining === max ? "bg-sage-500"
-    : remaining > 0  ? "bg-peach-500"
-    : "bg-rust-300";
-
+function Confetti() {
   return (
-    <div className="flex gap-2 items-center">
-      {Array.from({ length: max }).map((_, i) => (
-        <span
-          key={i}
-          className={[
-            "w-4 h-4 rounded-full transition-colors duration-500",
-            i < remaining ? filledColor : "bg-clay-200",
-          ].join(" ")}
-        />
+    <div className="confetti" aria-hidden="true">
+      {Array.from({ length: CONFETTI_COUNT }, (_, i) => (
+        <span key={i} className="confetti__piece" />
       ))}
     </div>
   );
@@ -61,8 +37,7 @@ function Spinner() {
 export function ProgressPage() {
   const navigate = useNavigate();
   const [challenge, setChallenge] = useState<ChallengeResponse | null>(null);
-  const [todayDone, setTodayDone] = useState(0);
-  const [todayTotal, setTodayTotal] = useState(0);
+  const [justCompleted, setJustCompleted] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const ran = useRef(false);
@@ -73,18 +48,18 @@ export function ProgressPage() {
     async function load() {
       try {
         const c = await getActiveChallenge();
-        if (!c || c.status !== "ACTIVE") {
+        if (!c || (c.status !== "ACTIVE" && c.status !== "COMPLETED")) {
           navigate("/dashboard", { replace: true });
           return;
         }
+        if (c.status === "COMPLETED") {
+          const key = `celebrated-${c.id}`;
+          if (!sessionStorage.getItem(key)) {
+            setJustCompleted(true);
+            sessionStorage.setItem(key, "1");
+          }
+        }
         setChallenge(c);
-
-        const [tasks, checks] = await Promise.all([
-          getTasks(c.id),
-          getTodayChecks(c.id),
-        ]);
-        setTodayTotal(tasks.length);
-        setTodayDone(checks.length);
       } catch (err) {
         if (err instanceof ApiAuthError) { navigate("/login", { replace: true }); return; }
         setError("Failed to load. Please refresh.");
@@ -96,107 +71,169 @@ export function ProgressPage() {
   }, [navigate]);
 
   if (isLoading) return <Spinner />;
-  if (error) return <p className="font-sans text-sm text-rust-600">{error}</p>;
+  if (error) return <p className="font-sans text-sm text-rust-600 p-6">{error}</p>;
   if (!challenge) return null;
 
   const { currentStreak, currentTier, missBufferRemaining, bestStreak, lastStateChangeReason } = challenge;
-  const tier = TIER_META[currentTier - 1] ?? TIER_META[0];
-  const close = lastCloseText(lastStateChangeReason, missBufferRemaining);
-  const todayAllDone = todayTotal > 0 && todayDone === todayTotal;
+  const isComplete = challenge.status === "COMPLETED";
 
-  const todayLabel = new Date().toLocaleDateString("en-ZA", {
-    weekday: "long", month: "long", day: "numeric",
-  });
+  const tierMeta = TIER_META[(currentTier - 1)] ?? TIER_META[3];
+  const maxBuffer = tierMeta.maxBuffer;
+  const isNoBuffer = !isComplete && maxBuffer > 0 && missBufferRemaining === 0;
+  const isRecord = isComplete;
+
+  const meterPct = isComplete ? 100 : Math.min(100, (currentStreak / 75) * 100);
+  const meterPctStr = `${meterPct.toFixed(2)}%`;
+
+  const tierBarPct = isComplete
+    ? 100
+    : Math.min(100, Math.max(0, (currentStreak - tierMeta.start) / (tierMeta.end - tierMeta.start) * 100));
+
+  const hasFellBack = (
+    lastStateChangeReason === "FELL_BACK_TO_40" ||
+    lastStateChangeReason === "FELL_BACK_TO_20" ||
+    lastStateChangeReason === "RESET_TO_0"
+  ) && bestStreak > currentStreak;
+
+  const tierHint = isComplete
+    ? "All tiers cleared"
+    : currentTier < 4
+      ? `${tierMeta.end - currentStreak} days to Tier ${currentTier + 1}`
+      : null;
+
+  const bufferHint = maxBuffer === 0
+    ? null
+    : isComplete
+      ? `${missBufferRemaining} of ${maxBuffer} left · ${maxBuffer - missBufferRemaining} save${maxBuffer - missBufferRemaining === 1 ? "" : "s"} used`
+      : isNoBuffer
+        ? `0 of ${maxBuffer} — a miss now resets you`
+        : `${missBufferRemaining} of ${maxBuffer} saves ready`;
+
+  const rootClass = [
+    "momentum",
+    isNoBuffer ? "momentum--no-buffer" : "",
+    isComplete ? "momentum--complete" : "",
+  ].filter(Boolean).join(" ");
 
   return (
-    <div className="animate-rise flex flex-col gap-6">
+    <div className={rootClass}>
+      {isComplete && justCompleted && <Confetti />}
 
-      {/* Big streak number */}
-      <div>
-        <p className="text-caption font-semibold text-clay-400 tracking-widest uppercase mb-1">
-          {todayLabel}
-        </p>
-        <p className="font-display text-stat font-medium text-clay-950 leading-none">
-          {currentStreak}
-        </p>
-        <p className="font-sans text-base text-clay-500 mt-1">day streak</p>
-      </div>
-
-      {/* Today's status — shown while day hasn't closed yet */}
-      {todayTotal > 0 && (
-        <div className={[
-          "rounded-xl border px-4 py-3 flex items-center gap-3",
-          todayAllDone
-            ? "bg-sage-100 border-sage-300"
-            : "bg-paper border-clay-200 shadow-soft",
-        ].join(" ")}>
-          <span className={[
-            "flex-shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center",
-            todayAllDone ? "bg-sage-500 border-sage-500" : "border-clay-300",
-          ].join(" ")}>
-            {todayAllDone && (
-              <svg width="10" height="8" viewBox="0 0 12 10" fill="none" aria-hidden="true">
-                <path d="M1 5l3.5 3.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </span>
-          <div>
-            <p className={`font-sans text-sm font-semibold ${todayAllDone ? "text-sage-600" : "text-clay-700"}`}>
-              {todayAllDone ? "Today complete — closes at midnight" : `Today: ${todayDone} of ${todayTotal} done`}
-            </p>
-            {todayAllDone && (
-              <p className="font-sans text-caption text-clay-500 mt-0.5">Streak will advance to {currentStreak + 1} tonight</p>
-            )}
-          </div>
+      {isComplete && (
+        <div className="momentum__ribbon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+            <path d="M20 6L9 17l-5-5" />
+          </svg>
+          All 75 days complete
         </div>
       )}
 
-      {/* Tier + Buffer side by side */}
-      <div className="grid grid-cols-2 gap-3">
-        <div className="rounded-xl bg-paper border border-clay-200 shadow-soft px-4 py-4">
-          <p className="text-caption font-semibold text-clay-400 uppercase tracking-widest mb-1">
-            Tier
-          </p>
-          <p className="font-display text-xl font-medium text-clay-950">{tier.label}</p>
-          <p className="font-sans text-sm text-clay-500 mt-0.5">{tier.range}</p>
+      <div className="momentum__hero">
+        <span className="momentum__count">{currentStreak}</span>
+        <span className="momentum__of">/75</span>
+        <span className={[
+          "momentum__status",
+          isNoBuffer ? "momentum__status--danger" : "",
+          isComplete ? "momentum__status--complete" : "",
+        ].filter(Boolean).join(" ")}>
+          {isComplete ? "Complete" : isNoBuffer ? "No safety net" : "On a roll"}
+        </span>
+      </div>
+      <p className="momentum__label">
+        {isComplete ? "days — you did the whole thing" : "day streak"}
+      </p>
+
+      <div className="momentum__meter">
+        <div className="momentum__meter-fill" style={{ width: meterPctStr }} />
+        <div className="momentum__marker" style={{ left: meterPctStr }}>
+          <div className="momentum__spark">
+            {isComplete ? (
+              <svg viewBox="0 0 24 24" fill="none" stroke="var(--sage-600)" strokeWidth="3.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+                <path d="M20 6L9 17l-5-5" />
+              </svg>
+            ) : (
+              <svg viewBox="0 0 24 24" fill="var(--peach-600)" aria-hidden="true">
+                <path d="M12 2l2.2 7.8L22 12l-7.8 2.2L12 22l-2.2-7.8L2 12l7.8-2.2z" />
+              </svg>
+            )}
+          </div>
+        </div>
+      </div>
+      <div className="momentum__scale">
+        <span>Day 1</span>
+        <span className="momentum__scale-end">
+          {isComplete ? "Day 75 · reached" : "Day 75 · finish"}
+        </span>
+      </div>
+
+      <div className="momentum__cards">
+        <div className="mcard">
+          <div className="mcard__label">Tier</div>
+          <div className="tier__row">
+            <div className={`tier__badge${currentTier === 4 ? " tier__badge--4" : ""}`}>
+              {currentTier}
+            </div>
+            <div>
+              <div className="tier__name">{tierMeta.label}</div>
+              <div className="tier__range">{tierMeta.range}</div>
+            </div>
+          </div>
+          <div className="tier__bar">
+            <div className="tier__bar-fill" style={{ width: `${tierBarPct.toFixed(2)}%` }} />
+          </div>
+          {tierHint && (
+            <div className={`tier__hint${isComplete ? " tier__hint--done" : ""}`}>
+              {tierHint}
+            </div>
+          )}
         </div>
 
-        <div className="rounded-xl bg-paper border border-clay-200 shadow-soft px-4 py-4">
-          <p className="text-caption font-semibold text-clay-400 uppercase tracking-widest mb-2">
-            Buffer
-          </p>
-          <BufferDots remaining={missBufferRemaining} max={tier.maxBuffer} />
-          {tier.maxBuffer > 0 && (
-            <p className="font-sans text-sm text-clay-500 mt-2">
-              {missBufferRemaining} of {tier.maxBuffer} left
-            </p>
+        <div className={`mcard${isNoBuffer ? " buffer--empty" : ""}`}>
+          <div className="mcard__label">Buffer</div>
+          {maxBuffer === 0 ? (
+            <div className="buffer__pips" style={{ marginTop: "14px" }}>
+              <p style={{ fontSize: "12px", color: "var(--clay-500)", fontWeight: 600 }}>Zero tolerance</p>
+            </div>
+          ) : (
+            <>
+              <div className="buffer__pips">
+                {Array.from({ length: maxBuffer }, (_, i) => (
+                  <span
+                    key={i}
+                    className={`buffer__pip${i >= missBufferRemaining ? " buffer__pip--empty" : ""}`}
+                  />
+                ))}
+              </div>
+              {bufferHint && (
+                <div className={`buffer__hint${isNoBuffer ? " buffer__hint--danger" : ""}`}>
+                  {bufferHint}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
 
-      {/* Best streak */}
-      <div className="rounded-xl bg-sage-100 border border-sage-300 px-5 py-4 flex items-center justify-between">
-        <div>
-          <p className="text-caption font-semibold text-sage-600 uppercase tracking-widest mb-1">
+      <div className={`best${isRecord ? " best--record" : ""}`}>
+        <div className="best__medal">{bestStreak}</div>
+        <div className="best__body">
+          <div className="best__label">
             Best streak
-          </p>
-          <p className="font-display text-3xl font-medium text-sage-600">{bestStreak}</p>
-          <p className="font-sans text-sm text-clay-600 mt-0.5">days — never resets</p>
+            {isRecord && <span className="best__tag">New record</span>}
+          </div>
+          <div className="best__value">{bestStreak} days</div>
+          <div className="best__sub">
+            {isRecord
+              ? "a perfect run — never resets"
+              : hasFellBack
+                ? "your record — fell back"
+                : "your record — never resets"}
+          </div>
         </div>
-        <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-sage-500 flex-shrink-0" aria-hidden="true">
-          <path d="M8.21 13.89L7 23l5-3 5 3-1.21-9.12" />
-          <path d="M15 7a3 3 0 1 0-6 0c0 1.66.5 3 1.5 4L12 13l1.5-2c1-1 1.5-2.34 1.5-4z" />
+        <svg className="best__trophy" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+          <path d="M8 21h8M12 17v4M7 4h10v5a5 5 0 0 1-10 0V4zM7 6H4v2a3 3 0 0 0 3 3M17 6h3v2a3 3 0 0 1-3 3" />
         </svg>
       </div>
-
-      {/* Last close */}
-      <div className="rounded-xl bg-paper border border-clay-200 shadow-soft px-5 py-4">
-        <p className="text-caption font-semibold text-clay-400 uppercase tracking-widest mb-1">
-          Last update
-        </p>
-        <p className={`font-sans text-base font-semibold ${close.color}`}>{close.text}</p>
-      </div>
-
     </div>
   );
 }
