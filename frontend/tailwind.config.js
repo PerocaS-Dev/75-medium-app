@@ -75,7 +75,7 @@ export default {
       },
 
       fontFamily: {
-        display: ['Newsreader', 'Georgia', 'serif'],
+        display: ['Fraunces', 'Georgia', 'serif'],
         sans:    ['"Hanken Grotesk"', 'ui-sans-serif', 'system-ui', 'sans-serif'],
       },
 
