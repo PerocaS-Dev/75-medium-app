@@ -3,6 +3,22 @@ import type { UserProgressResponse } from "./api";
 
 export const CHALLENGE_LENGTH = 75;
 
+// Canonical reaction set — one emoji per type, used everywhere reactions render
+// (friend feed, photo tile/modal, and the owner's own Journal/Photo views) so the
+// same reaction always looks the same.
+export const REACTIONS: { type: string; emoji: string; label: string }[] = [
+  { type: "LIKE", emoji: "❤️", label: "Like" },
+  { type: "FIRE", emoji: "🔥", label: "Fire" },
+  { type: "STRONG", emoji: "💪", label: "Strong" },
+  { type: "CELEBRATE", emoji: "🎉", label: "Celebrate" },
+  { type: "LAUGH", emoji: "😄", label: "Laugh" },
+  { type: "SAD", emoji: "😔", label: "Sad" },
+];
+
+export const REACTION_EMOJI: Record<string, string> = Object.fromEntries(
+  REACTIONS.map((r) => [r.type, r.emoji])
+);
+
 export type FriendState = "on-track" | "buffer-low" | "fell-back" | "none";
 
 const FELL_BACK = new Set(["RESET_TO_0", "FELL_BACK_TO_20", "FELL_BACK_TO_40"]);

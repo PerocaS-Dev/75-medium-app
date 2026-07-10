@@ -15,7 +15,7 @@ import {
   type ReactionResponse,
   type PhotoReactionResponse,
 } from "../api";
-import { avatarColor, initial, relativeTime } from "../friends";
+import { avatarColor, initial, relativeTime, REACTIONS, REACTION_EMOJI } from "../friends";
 
 // Minimal friend descriptor the feeds need to fetch + label posts.
 export interface FeedFriend {
@@ -23,15 +23,6 @@ export interface FeedFriend {
   name: string;
   day: number;
 }
-
-const REACTIONS: { type: string; emoji: string; label: string }[] = [
-  { type: "LIKE", emoji: "❤️", label: "Like" },
-  { type: "FIRE", emoji: "🔥", label: "Fire" },
-  { type: "STRONG", emoji: "💪", label: "Strong" },
-  { type: "CELEBRATE", emoji: "🎉", label: "Celebrate" },
-  { type: "LAUGH", emoji: "😄", label: "Laugh" },
-  { type: "SAD", emoji: "😔", label: "Sad" },
-];
 
 function Avatar({ id, name, size = "h-10 w-10" }: { id: string; name: string; size?: string }) {
   return (
@@ -349,6 +340,10 @@ function PhotoTile({ item, myId, onOpen }: { item: PhotoItem; myId: string | und
   const { photo, friend, url, reactions } = item;
   const [broken, setBroken] = useState(false);
   const mine = reactions.some((r) => r.userId === myId);
+  // Show the actual reaction emoji(s) present, not a generic heart.
+  const distinctEmoji = [...new Set(reactions.map((r) => r.type))]
+    .map((t) => REACTION_EMOJI[t] ?? "❤️")
+    .join("");
   return (
     <button onClick={onOpen} className="relative aspect-[3/4] rounded-2xl overflow-hidden shadow-soft text-left">
       <div className={`absolute inset-0 ${avatarColor(friend.id)} opacity-40`} />
@@ -365,11 +360,13 @@ function PhotoTile({ item, myId, onOpen }: { item: PhotoItem; myId: string | und
       <div className="absolute top-2.5 left-2.5">
         <PublicBadge tone="onImage" />
       </div>
-      <div className="absolute top-2.5 right-2.5">
-        <span className={`rounded-pill px-2 py-0.5 text-caption font-semibold flex items-center gap-1 backdrop-blur-sm ${mine ? "bg-blush-500/90 text-white" : "bg-black/25 text-white"}`}>
-          ❤️ {reactions.length}
-        </span>
-      </div>
+      {reactions.length > 0 && (
+        <div className="absolute top-2.5 right-2.5">
+          <span className={`rounded-pill px-2 py-0.5 text-caption font-semibold flex items-center gap-1 backdrop-blur-sm ${mine ? "bg-blush-500/90 text-white" : "bg-black/25 text-white"}`}>
+            {distinctEmoji} {reactions.length}
+          </span>
+        </div>
+      )}
       <div className="absolute bottom-3 left-3 right-3">
         <p className="font-sans text-base font-semibold text-white drop-shadow-sm">{friend.name}</p>
         <p className="font-sans text-caption text-white/85 drop-shadow-sm">Day {friend.day}</p>

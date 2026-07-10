@@ -113,8 +113,24 @@ function RegisterForm() {
   const set = (field: string) => (e: React.ChangeEvent<HTMLInputElement>) =>
     setForm((f) => ({ ...f, [field]: e.target.value }));
 
+  const validate = (): string | null => {
+    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(form.email.trim())) {
+      return "Enter a valid email address.";
+    }
+    const pw = form.password;
+    if (!(pw.length >= 8 && /[A-Z]/.test(pw) && /[0-9]/.test(pw) && /[^A-Za-z0-9]/.test(pw))) {
+      return "Password must be at least 8 characters and include an uppercase letter, a number, and a special character.";
+    }
+    return null;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const invalid = validate();
+    if (invalid) {
+      setError(invalid);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
@@ -125,6 +141,11 @@ function RegisterForm() {
       });
       if (regRes.status === 409) {
         setError("An account with that email already exists.");
+        return;
+      }
+      if (regRes.status === 400) {
+        const problem = await regRes.json().catch(() => null);
+        setError(problem?.detail ?? "Please check your details and try again.");
         return;
       }
       if (!regRes.ok) {
@@ -207,6 +228,9 @@ function RegisterForm() {
             <EyeIcon />
           </button>
         </div>
+        <span className="text-caption text-clay-400">
+          At least 8 characters, with an uppercase letter, a number, and a special character.
+        </span>
       </label>
 
       <button

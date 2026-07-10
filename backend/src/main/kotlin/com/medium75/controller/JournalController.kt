@@ -27,6 +27,7 @@ data class JournalEntryResponse(
 data class ReactionResponse(
     val id: UUID,
     val userId: UUID,
+    val displayName: String,
     val type: String,
     val replyBody: String?,
     val createdAt: Instant
@@ -49,7 +50,7 @@ data class AddReactionRequest(
 )
 
 private fun JournalEntry.toResponse() = JournalEntryResponse(id, userId, body, entryDate, audienceType.name, createdAt, updatedAt)
-private fun Reaction.toResponse()     = ReactionResponse(id, userId, type.name, replyBody, createdAt)
+private fun Reaction.toResponse(displayName: String) = ReactionResponse(id, userId, displayName, type.name, replyBody, createdAt)
 
 @RestController
 class JournalController(
@@ -58,6 +59,9 @@ class JournalController(
 ) {
     private fun me(principal: UserDetails): UUID =
         userService.findByEmail(principal.username)?.id ?: throw NoSuchElementException("User not found")
+
+    private fun nameOf(userId: UUID): String =
+        userService.findById(userId)?.displayName ?: "Unknown"
 
     // ── own entries ──────────────────────────────────────────────────────────
 
@@ -116,7 +120,8 @@ class JournalController(
     ): ReactionResponse {
         val type = runCatching { ReactionType.valueOf(body.type) }
             .getOrElse { throw IllegalArgumentException("Invalid reaction type: ${body.type}. Valid: ${ReactionType.entries.joinToString()}") }
-        return journalService.addReaction(me(principal), id, type, body.replyBody).toResponse()
+        val reaction = journalService.addReaction(me(principal), id, type, body.replyBody)
+        return reaction.toResponse(nameOf(reaction.userId))
     }
 
     @DeleteMapping("/api/journals/{id}/reactions")
@@ -131,5 +136,5 @@ class JournalController(
         @PathVariable id: UUID,
         @AuthenticationPrincipal principal: UserDetails
     ): List<ReactionResponse> =
-        journalService.listReactions(me(principal), id).map { it.toResponse() }
+        journalService.listReactions(me(principal), id).map { it.toResponse(nameOf(it.userId)) }
 }

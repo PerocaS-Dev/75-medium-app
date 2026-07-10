@@ -330,11 +330,11 @@ function CircleTab(props: CircleProps) {
   };
 
   const share = async () => {
-    const url = window.location.origin;
+    const url = `${window.location.origin}/register`;
     const nav = navigator as Navigator & { share?: (d: ShareData) => Promise<void> };
     if (nav.share) {
       try {
-        await nav.share({ title: "75 Medium", text: "Do the 75 with me on 75 Medium", url });
+        await nav.share({ title: "75 Medium", text: "Do the 75 with me on 75 Medium — sign up here", url });
       } catch {
         /* user cancelled */
       }

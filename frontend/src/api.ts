@@ -243,6 +243,7 @@ export interface JournalEntryResponse {
 export interface ReactionResponse {
   id: string;
   userId: string;
+  displayName: string;
   type: "LIKE" | "FIRE" | "STRONG" | "LAUGH" | "CELEBRATE" | "SAD";
   replyBody: string | null;
   createdAt: string;
@@ -391,6 +392,7 @@ export async function deletePhoto(id: string): Promise<void> {
 export interface PhotoReactionResponse {
   id: string;
   userId: string;
+  displayName: string;
   type: "LIKE" | "FIRE" | "STRONG" | "LAUGH" | "CELEBRATE" | "SAD";
   createdAt: string;
 }

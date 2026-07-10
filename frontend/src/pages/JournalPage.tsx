@@ -8,10 +8,7 @@ import {
   type JournalEntryResponse,
   type ReactionResponse,
 } from "../api";
-
-const REACTION_EMOJIS: Record<string, string> = {
-  LIKE: "👍", FIRE: "🔥", STRONG: "💪", LAUGH: "😄", CELEBRATE: "🎉", SAD: "😔",
-};
+import { REACTION_EMOJI } from "../friends";
 
 function formatDate(dateStr: string): string {
   const [y, m, d] = dateStr.split("-").map(Number);
@@ -37,31 +34,18 @@ function Spinner() {
 }
 
 function ReactionTally({ reactions }: { reactions: ReactionResponse[] }) {
-  const tally = reactions.reduce<Record<string, number>>((acc, r) => {
-    acc[r.type] = (acc[r.type] ?? 0) + 1;
-    return acc;
-  }, {});
-
-  const types = Object.keys(REACTION_EMOJIS).filter((t) => (tally[t] ?? 0) > 0);
-  const replies = reactions.filter((r) => r.replyBody);
-
-  if (types.length === 0 && replies.length === 0) {
+  if (reactions.length === 0) {
     return <p className="font-sans text-caption text-clay-400">No reactions yet</p>;
   }
 
   return (
-    <div className="flex flex-col gap-2">
-      {types.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          {types.map((t) => (
-            <span key={t} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-clay-100 font-sans text-sm text-clay-700">
-              {REACTION_EMOJIS[t]} {tally[t]}
-            </span>
-          ))}
-        </div>
-      )}
-      {replies.map((r) => (
-        <p key={r.id} className="font-sans text-sm text-clay-500">↩ "{r.replyBody}"</p>
+    <div className="flex flex-col gap-1.5">
+      {reactions.map((r) => (
+        <p key={r.id} className="font-sans text-sm text-clay-700">
+          <span className="mr-1.5">{REACTION_EMOJI[r.type] ?? "❤️"}</span>
+          <span className="font-semibold text-clay-900">{r.displayName}</span>
+          {r.replyBody && <span className="text-clay-600"> — “{r.replyBody}”</span>}
+        </p>
       ))}
     </div>
   );

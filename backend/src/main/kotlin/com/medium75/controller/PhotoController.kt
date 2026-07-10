@@ -31,6 +31,7 @@ data class SignedUrlResponse(val url: String, val expiresInMinutes: Long = 15)
 data class PhotoReactionResponse(
     val id: UUID,
     val userId: UUID,
+    val displayName: String,
     val type: String,
     val createdAt: Instant
 )
@@ -38,7 +39,7 @@ data class PhotoReactionResponse(
 data class AddPhotoReactionRequest(val type: String)
 
 private fun Photo.toResponse() = PhotoResponse(id, caption, audienceType.name, contentType, createdAt)
-private fun PhotoReaction.toResponse() = PhotoReactionResponse(id, userId, type.name, createdAt)
+private fun PhotoReaction.toResponse(displayName: String) = PhotoReactionResponse(id, userId, displayName, type.name, createdAt)
 
 @RestController
 class PhotoController(
@@ -47,6 +48,9 @@ class PhotoController(
 ) {
     private fun me(principal: UserDetails): UUID =
         userService.findByEmail(principal.username)?.id ?: throw NoSuchElementException("User not found")
+
+    private fun nameOf(userId: UUID): String =
+        userService.findById(userId)?.displayName ?: "Unknown"
 
     // ── upload ───────────────────────────────────────────────────────────────
 
@@ -110,7 +114,7 @@ class PhotoController(
         @PathVariable id: UUID,
         @AuthenticationPrincipal principal: UserDetails
     ): List<PhotoReactionResponse> =
-        photoService.listReactions(me(principal), id).map { it.toResponse() }
+        photoService.listReactions(me(principal), id).map { it.toResponse(nameOf(it.userId)) }
 
     @PostMapping("/api/photos/{id}/reactions")
     fun addReaction(
@@ -120,7 +124,8 @@ class PhotoController(
     ): PhotoReactionResponse {
         val type = runCatching { ReactionType.valueOf(body.type) }
             .getOrElse { throw IllegalArgumentException("Invalid reaction type: ${body.type}. Valid: ${ReactionType.entries.joinToString()}") }
-        return photoService.addReaction(me(principal), id, type).toResponse()
+        val reaction = photoService.addReaction(me(principal), id, type)
+        return reaction.toResponse(nameOf(reaction.userId))
     }
 
     @DeleteMapping("/api/photos/{id}/reactions")

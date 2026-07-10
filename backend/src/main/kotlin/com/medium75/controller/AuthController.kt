@@ -40,8 +40,27 @@ class AuthController(
     private val authenticationManager: AuthenticationManager
 ) {
 
+    private val emailRegex = Regex("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$")
+
+    private fun validateRegistration(req: RegisterRequest) {
+        require(emailRegex.matches(req.email.trim())) { "Enter a valid email address." }
+        val pw = req.password
+        require(
+            pw.length >= 8 &&
+                pw.any { it.isUpperCase() } &&
+                pw.any { it.isDigit() } &&
+                pw.any { !it.isLetterOrDigit() }
+        ) {
+            "Password must be at least 8 characters and include an uppercase letter, a number, and a special character."
+        }
+    }
+
     @PostMapping("/register")
     fun register(@RequestBody req: RegisterRequest): ResponseEntity<UserResponse> {
+        // Field validation → IllegalArgumentException → 400 with message (GlobalExceptionHandler).
+        // Runs before the duplicate-email check below, which stays a 409.
+        validateRegistration(req)
+
         val user = try {
             userService.register(req.email, req.password, req.displayName, req.timeZone)
         } catch (e: IllegalArgumentException) {

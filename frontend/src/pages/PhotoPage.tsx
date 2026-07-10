@@ -4,16 +4,20 @@ import { useGetIdentity } from "@refinedev/core";
 import {
   getMyPhotos,
   getPhotoSignedUrl,
+  getPhotoReactions,
   deletePhoto,
   recordPopiaConsent,
   ApiAuthError,
   type PhotoResponse,
+  type PhotoReactionResponse,
 } from "../api";
 import type { UserIdentity } from "../authProvider";
+import { REACTION_EMOJI } from "../friends";
 
 interface PhotoEntry {
   photo: PhotoResponse;
   url: string;
+  reactions: PhotoReactionResponse[];
 }
 
 function formatDate(iso: string): string {
@@ -153,7 +157,11 @@ export function PhotoPage() {
       try {
         const photos = await getMyPhotos();
         const loaded = await Promise.all(
-          photos.map(async (p) => ({ photo: p, url: await getPhotoSignedUrl(p.id) }))
+          photos.map(async (p) => ({
+            photo: p,
+            url: await getPhotoSignedUrl(p.id),
+            reactions: await getPhotoReactions(p.id).catch(() => []),
+          }))
         );
         loaded.sort((a, b) => b.photo.createdAt.localeCompare(a.photo.createdAt));
         setEntries(loaded);
@@ -240,6 +248,16 @@ export function PhotoPage() {
                 <p className="font-sans text-caption text-clay-700 truncate">{e.photo.caption}</p>
               )}
               <p className="font-sans text-caption text-clay-400">{formatDate(e.photo.createdAt)}</p>
+              {e.reactions.length > 0 && (
+                <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                  {e.reactions.map((r) => (
+                    <span key={r.id} className="font-sans text-caption text-clay-600">
+                      <span className="mr-0.5">{REACTION_EMOJI[r.type] ?? "❤️"}</span>
+                      <span className="font-semibold text-clay-800">{r.displayName}</span>
+                    </span>
+                  ))}
+                </div>
+              )}
             </div>
           ))}
         </div>
