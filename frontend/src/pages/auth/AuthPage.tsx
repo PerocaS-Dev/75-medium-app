@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useLogin } from "@refinedev/core";
 import { useNavigate } from "react-router-dom";
+import { InstallHint } from "../../components/InstallHint";
 import "./auth-page.css";
 
 type Tab = "signin" | "register";
@@ -292,6 +293,8 @@ export function AuthPage({ initialTab }: { initialTab: Tab }) {
             <a href="#terms" className="font-semibold text-clay-700">Terms</a> &amp;{" "}
             <a href="#privacy" className="font-semibold text-clay-700">Privacy</a>. POPIA-compliant.
           </p>
+
+          <InstallHint />
         </div>
       </main>
     </div>
