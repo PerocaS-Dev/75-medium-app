@@ -32,6 +32,9 @@ class FriendshipService(
     fun listIncomingRequests(userId: UUID): List<Friendship> =
         friendshipRepo.findAllByAddresseeIdAndStatus(userId, FriendshipStatus.PENDING)
 
+    fun listOutgoingRequests(userId: UUID): List<Friendship> =
+        friendshipRepo.findAllByRequesterIdAndStatus(userId, FriendshipStatus.PENDING)
+
     // ── mutations ────────────────────────────────────────────────────────────
 
     @Transactional

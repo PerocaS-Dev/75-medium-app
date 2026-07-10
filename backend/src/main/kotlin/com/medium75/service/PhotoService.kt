@@ -2,6 +2,9 @@ package com.medium75.service
 
 import com.medium75.model.AudienceType
 import com.medium75.model.Photo
+import com.medium75.model.PhotoReaction
+import com.medium75.model.ReactionType
+import com.medium75.repository.PhotoReactionRepository
 import com.medium75.repository.PhotoRepository
 import com.medium75.repository.UserRepository
 import org.springframework.security.access.AccessDeniedException
@@ -14,6 +17,7 @@ import java.util.UUID
 @Service
 class PhotoService(
     private val photoRepo: PhotoRepository,
+    private val photoReactionRepo: PhotoReactionRepository,
     private val storageService: StorageService,
     private val friendshipService: FriendshipService,
     private val signingService: PhotoSigningService,
@@ -107,6 +111,45 @@ class PhotoService(
         photo.deletedAt = Instant.now()
         photo.updatedAt = Instant.now()
         photoRepo.save(photo)
+    }
+
+    // ── reactions ──────────────────────────────────────────────────────────────
+    // Same two-layer gate as photo viewing: must be friends AND the photo must be
+    // FRIENDS-visible (or your own). Upserts one reaction per user per photo.
+
+    @Transactional
+    fun addReaction(actorId: UUID, photoId: UUID, type: ReactionType): PhotoReaction {
+        val photo = requireActive(photoId)
+        friendshipService.assertCanView(actorId, photo.userId)
+        requirePhotoVisible(actorId, photo)
+
+        val existing = photoReactionRepo.findByPhotoIdAndUserId(photoId, actorId)
+        return if (existing != null) {
+            existing.type = type
+            existing.updatedAt = Instant.now()
+            photoReactionRepo.save(existing)
+        } else {
+            photoReactionRepo.save(PhotoReaction(photoId = photoId, userId = actorId, type = type))
+        }
+    }
+
+    @Transactional
+    fun removeReaction(actorId: UUID, photoId: UUID) {
+        val photo = requireActive(photoId)
+        friendshipService.assertCanView(actorId, photo.userId)
+        requirePhotoVisible(actorId, photo)
+        val reaction = photoReactionRepo.findByPhotoIdAndUserId(photoId, actorId)
+            ?: throw NoSuchElementException("Reaction not found")
+        photoReactionRepo.delete(reaction)
+    }
+
+    fun listReactions(viewerId: UUID, photoId: UUID): List<PhotoReaction> {
+        val photo = requireActive(photoId)
+        if (viewerId != photo.userId) {
+            friendshipService.assertCanView(viewerId, photo.userId)
+            requirePhotoVisible(viewerId, photo)
+        }
+        return photoReactionRepo.findAllByPhotoId(photoId)
     }
 
     // ── internal ─────────────────────────────────────────────────────────────

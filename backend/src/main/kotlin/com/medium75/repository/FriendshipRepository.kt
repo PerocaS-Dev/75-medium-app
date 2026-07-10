@@ -27,4 +27,6 @@ interface FriendshipRepository : JpaRepository<Friendship, UUID> {
     ): List<Friendship>
 
     fun findAllByAddresseeIdAndStatus(addresseeId: UUID, status: FriendshipStatus): List<Friendship>
+
+    fun findAllByRequesterIdAndStatus(requesterId: UUID, status: FriendshipStatus): List<Friendship>
 }

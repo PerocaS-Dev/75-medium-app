@@ -2,6 +2,7 @@ package com.medium75.controller
 
 import com.medium75.model.StateChangeReason
 import com.medium75.service.ChallengeService
+import com.medium75.service.DailyCheckOffService
 import com.medium75.service.FriendshipService
 import com.medium75.service.StreakEngine
 import com.medium75.service.UserService
@@ -9,6 +10,7 @@ import org.springframework.http.ResponseEntity
 import org.springframework.security.core.annotation.AuthenticationPrincipal
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
+import java.time.Instant
 import java.time.LocalDate
 import java.util.UUID
 
@@ -26,7 +28,11 @@ data class UserProgressResponse(
     val bestStreak: Int,
     val lastStateChangeReason: String?,
     val challengeStatus: String,
-    val startDate: LocalDate
+    val startDate: LocalDate,
+    // Today snapshot — counts only, never which task (privacy by design)
+    val todayDoneCount: Int,
+    val todayTaskTotal: Int,
+    val lastActivityAt: Instant?
 )
 
 @RestController
@@ -34,6 +40,7 @@ data class UserProgressResponse(
 class UserProgressController(
     private val friendshipService: FriendshipService,
     private val challengeService: ChallengeService,
+    private val dailyCheckOffService: DailyCheckOffService,
     private val userService: UserService
 ) {
     private fun me(principal: UserDetails): UUID =
@@ -73,6 +80,8 @@ class UserProgressController(
         val challenge = challengeService.getActiveChallenge(userId)
             ?: return ResponseEntity.notFound().build()
 
+        val today = dailyCheckOffService.todaySnapshotFor(challenge)
+
         return ResponseEntity.ok(UserProgressResponse(
             userId                = userId,
             displayName           = user.displayName,
@@ -82,7 +91,10 @@ class UserProgressController(
             bestStreak            = challenge.bestStreak,
             lastStateChangeReason = challenge.lastStateChangeReason?.name,
             challengeStatus       = challenge.status.name,
-            startDate             = challenge.startDate
+            startDate             = challenge.startDate,
+            todayDoneCount        = today.doneCount,
+            todayTaskTotal        = today.totalCount,
+            lastActivityAt        = today.lastActivityAt
         ))
     }
 }

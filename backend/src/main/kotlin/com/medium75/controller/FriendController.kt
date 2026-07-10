@@ -41,6 +41,10 @@ class FriendController(
     fun listRequests(@AuthenticationPrincipal principal: UserDetails): List<FriendshipResponse> =
         friendshipService.listIncomingRequests(me(principal)).map { it.toResponse() }
 
+    @GetMapping("/pending")
+    fun listPending(@AuthenticationPrincipal principal: UserDetails): List<FriendshipResponse> =
+        friendshipService.listOutgoingRequests(me(principal)).map { it.toResponse() }
+
     @PostMapping("/request")
     @ResponseStatus(HttpStatus.CREATED)
     fun sendRequest(

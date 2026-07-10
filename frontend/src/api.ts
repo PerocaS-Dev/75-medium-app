@@ -140,6 +140,9 @@ export interface UserProgressResponse {
   lastStateChangeReason: string | null;
   challengeStatus: string;
   startDate: string;
+  todayDoneCount: number;
+  todayTaskTotal: number;
+  lastActivityAt: string | null;
 }
 
 export interface FriendshipResponse {
@@ -185,6 +188,13 @@ export async function getIncomingRequests(): Promise<FriendshipResponse[]> {
   const res = await fetch("/api/friends/requests");
   assertAuth(res);
   if (!res.ok) throw new Error("Failed to load requests");
+  return res.json();
+}
+
+export async function getOutgoingRequests(): Promise<FriendshipResponse[]> {
+  const res = await fetch("/api/friends/pending");
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load pending invites");
   return res.json();
 }
 
@@ -376,4 +386,35 @@ export async function deletePhoto(id: string): Promise<void> {
   const res = await fetch(`/api/photos/${id}`, { method: "DELETE" });
   assertAuth(res);
   if (!res.ok) throw new Error("Failed to delete photo");
+}
+
+export interface PhotoReactionResponse {
+  id: string;
+  userId: string;
+  type: "LIKE" | "FIRE" | "STRONG" | "LAUGH" | "CELEBRATE" | "SAD";
+  createdAt: string;
+}
+
+export async function getPhotoReactions(photoId: string): Promise<PhotoReactionResponse[]> {
+  const res = await fetch(`/api/photos/${photoId}/reactions`);
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load photo reactions");
+  return res.json();
+}
+
+export async function addPhotoReaction(photoId: string, type: string): Promise<PhotoReactionResponse> {
+  const res = await fetch(`/api/photos/${photoId}/reactions`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ type }),
+  });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to add photo reaction");
+  return res.json();
+}
+
+export async function removePhotoReaction(photoId: string): Promise<void> {
+  const res = await fetch(`/api/photos/${photoId}/reactions`, { method: "DELETE" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to remove photo reaction");
 }

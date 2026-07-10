@@ -10,6 +10,12 @@ import java.time.LocalDate
 import java.time.ZoneId
 import java.util.UUID
 
+data class TodaySnapshot(
+    val doneCount: Int,
+    val totalCount: Int,
+    val lastActivityAt: Instant?
+)
+
 @Service
 class DailyCheckOffService(
     private val taskDefRepo: TaskDefinitionRepository,
@@ -28,6 +34,22 @@ class DailyCheckOffService(
     fun getTodayChecks(challengeId: UUID, userId: UUID): List<DailyTaskCheck> {
         val log = getTodayLog(challengeId, userId)
         return dailyTaskCheckRepo.findAllByDailyLogId(log.id)
+    }
+
+    /**
+     * Read-only snapshot of a challenge's *today* — done/total task counts and the
+     * last activity timestamp. Exposes only counts (never which task), so it is safe
+     * to surface to friends. Does not require ownership.
+     */
+    fun todaySnapshotFor(challenge: Challenge): TodaySnapshot {
+        val today = todayFor(challenge)
+        val log = dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, today)
+        val total = log?.tasksTotalCount ?: taskDefRepo.countByChallengeId(challenge.id).toInt()
+        return TodaySnapshot(
+            doneCount      = log?.tasksCompletedCount ?: 0,
+            totalCount     = total,
+            lastActivityAt = log?.updatedAt ?: challenge.updatedAt
+        )
     }
 
     @Transactional

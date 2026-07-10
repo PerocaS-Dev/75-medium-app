@@ -19,6 +19,7 @@ class ChallengeService(
     fun getActiveChallenge(userId: UUID): Challenge? =
         challengeRepo.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ChallengeStatus.ACTIVE)
             ?: challengeRepo.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ChallengeStatus.PENDING)
+            ?: challengeRepo.findFirstByUserIdAndStatusOrderByCreatedAtDesc(userId, ChallengeStatus.COMPLETED)
 
     fun getChallengeHistory(userId: UUID): List<Challenge> =
         challengeRepo.findAllByUserId(userId)

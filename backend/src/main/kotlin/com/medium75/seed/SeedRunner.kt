@@ -4,6 +4,9 @@ import com.medium75.model.*
 import com.medium75.repository.ChallengeRepository
 import com.medium75.repository.DailyLogRepository
 import com.medium75.repository.FriendshipRepository
+import com.medium75.repository.JournalEntryRepository
+import com.medium75.repository.PhotoRepository
+import com.medium75.repository.ReactionRepository
 import com.medium75.repository.TaskDefinitionRepository
 import com.medium75.repository.UserRepository
 import com.medium75.service.StreakEngine
@@ -29,6 +32,9 @@ class SeedRunner(
     private val taskDefRepo: TaskDefinitionRepository,
     private val dailyLogRepo: DailyLogRepository,
     private val friendshipRepo: FriendshipRepository,
+    private val journalRepo: JournalEntryRepository,
+    private val photoRepo: PhotoRepository,
+    private val reactionRepo: ReactionRepository,
     private val jdbc: JdbcTemplate,
     @Value("\${PGHOST:localhost}") private val pgHost: String,
     @Value("\${seed.main-user-email:}") private val mainUserEmail: String,
@@ -130,6 +136,130 @@ class SeedRunner(
         ),
     )
 
+    // ── Journal + photo content ────────────────────────────────────────────────
+    // audience FRIENDS = public-to-circle (shows in friends' feeds);
+    // audience SELF = private (must never appear in a friend's feed).
+
+    data class SeedJournal(
+        val audience: AudienceType,
+        val hoursAgo: Long,
+        val body: String,
+        val likes: Int = 0,      // reactions from other seed users
+        val comments: Int = 0,   // of those likes, how many carry a reply
+    )
+
+    data class SeedPhoto(
+        val audience: AudienceType,
+        val hoursAgo: Long,
+        val caption: String? = null,
+    )
+
+    data class SeedContent(
+        val journals: List<SeedJournal> = emptyList(),
+        val photos: List<SeedPhoto> = emptyList(),
+    )
+
+    private val F = AudienceType.FRIENDS
+    private val S = AudienceType.SELF
+
+    private val content: Map<String, SeedContent> = mapOf(
+        "alex" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 5, "Day 60. The 5am alarm barely registers anymore — it's just what mornings are now.", likes = 7, comments = 3),
+                SeedJournal(F, 30, "Two months in. Started this to lose weight; staying for who it's making me.", likes = 5, comments = 1),
+                SeedJournal(S, 12, "Private: knee twinged on the run today. Watch it, don't be a hero."),
+            ),
+            photos = listOf(
+                SeedPhoto(F, 6, "Sunrise from the trail"),
+                SeedPhoto(S, 20, "Progress photo — week 8"),
+            ),
+        ),
+        "blake" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 2, "Cold shower still hurts every single morning. Doing it anyway.", likes = 4, comments = 2),
+                SeedJournal(S, 40, "Private: the two misses last week still bug me. Buffer saved me though."),
+            ),
+            photos = listOf(SeedPhoto(F, 3, "Post-run, legs jelly")),
+        ),
+        "casey" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 8, "Fifty days. The journaling task is the one I almost skipped — now it's the one I need most.", likes = 6, comments = 1),
+                SeedJournal(S, 26, "Private: sugar cravings brutal today. Won."),
+            ),
+            photos = listOf(SeedPhoto(F, 9, null)),
+        ),
+        "dana" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 4, "Fell back to 40 and I'm not going to pretend it didn't sting. Back on the horse.", likes = 8, comments = 4),
+                SeedJournal(F, 48, "The meditation minutes are the quietest part of my day now.", likes = 3),
+                SeedJournal(S, 15, "Private: honestly considered quitting Tuesday. Didn't tell anyone. Glad I stayed."),
+            ),
+            photos = listOf(
+                SeedPhoto(F, 5, "Cardio done before sunrise"),
+                SeedPhoto(S, 30, "Private progress shot"),
+            ),
+        ),
+        "evan" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 10, "Reset to 20 after a rough patch. Twenty is still twenty more than zero.", likes = 5, comments = 2),
+                SeedJournal(S, 22, "Private: the walks are keeping my head straight more than my body."),
+            ),
+            photos = listOf(SeedPhoto(F, 11, "Morning walk")),
+        ),
+        "fiona" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 3, "Rebuilding from day 8 after a reset. No shame in the restart.", likes = 6, comments = 2),
+                SeedJournal(S, 18, "Private: sleep-by-10 is the hardest task by far."),
+            ),
+            photos = listOf(
+                SeedPhoto(F, 7, "Back at it"),
+                SeedPhoto(S, 26, "Private — kitchen prep"),
+            ),
+        ),
+        "grace" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 6, "Day 68. Buffer still untouched. Tier 4 feels different — every day counts double now.", likes = 9, comments = 3),
+                SeedJournal(F, 50, "Strength numbers up across the board. The consistency compounds.", likes = 4, comments = 1),
+                SeedJournal(S, 14, "Private: nervous about the last stretch. Don't want to blow it now."),
+            ),
+            photos = listOf(
+                SeedPhoto(F, 4, "Lift day"),
+                SeedPhoto(S, 28, "Progress — week 9"),
+            ),
+        ),
+        "hiro" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 16, "Day 70. Spent my one buffer and it's zero-tolerance from here.", likes = 5, comments = 1),
+                SeedJournal(S, 34, "Private: 5k time dropped again. Keeping that to myself for now."),
+            ),
+            photos = listOf(SeedPhoto(F, 17, "5k done")),
+        ),
+        "iris" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 1, "Seventy-five. Done. It didn't fix everything — it fixed the part that decides whether I show up.", likes = 12, comments = 5),
+                SeedJournal(S, 20, "Private: cried a little finishing this. Won't put that in the public one."),
+            ),
+            photos = listOf(
+                SeedPhoto(F, 2, "Day 75 — finished"),
+                SeedPhoto(S, 24, "Private — the whole journey"),
+            ),
+        ),
+        "jordan" to SeedContent(
+            journals = listOf(
+                SeedJournal(F, 9, "Two weeks in. Still figuring out the rhythm but showing up.", likes = 3),
+                SeedJournal(S, 28, "Private: yoga at dawn is not my natural state. Growing though."),
+            ),
+            photos = listOf(SeedPhoto(F, 10, "Morning flow")),
+        ),
+    )
+
+    // Collected during seeding, resolved after all users exist.
+    private data class ReactionTarget(val entryId: UUID, val authorId: UUID, val likes: Int, val comments: Int)
+    private val reactionTargets = mutableListOf<ReactionTarget>()
+    private val seededUserIds = mutableListOf<UUID>()
+    private var journalCount = 0
+    private var photoCount = 0
+
     override fun run(args: ApplicationArguments) {
         guardAgainstProd()
 
@@ -150,6 +280,9 @@ class SeedRunner(
         }
 
         wireUpFriendships(seededUsers)
+        seedReactions()
+
+        println("  Seeded $journalCount journal entries and $photoCount photos (public + private)")
 
         printSummaryTable(finalStates)
         println("════════════════════════════════════════════════════════\n")
@@ -168,7 +301,28 @@ class SeedRunner(
         ) ?: 0
         if (count == 0) return
 
-        // Delete in FK-safe order via raw SQL
+        // Delete in FK-safe order via raw SQL.
+        // Reactions first — both those authored by seed users and those on seed users' entries.
+        jdbc.update("""
+            DELETE FROM reactions
+            WHERE user_id IN (SELECT id FROM users WHERE email LIKE ?)
+               OR journal_entry_id IN (
+                    SELECT e.id FROM journal_entries e
+                    JOIN users u ON u.id = e.user_id
+                    WHERE u.email LIKE ?
+               )
+        """, "%$SEED_EMAIL_SUFFIX", "%$SEED_EMAIL_SUFFIX")
+
+        jdbc.update("""
+            DELETE FROM journal_entries
+            WHERE user_id IN (SELECT id FROM users WHERE email LIKE ?)
+        """, "%$SEED_EMAIL_SUFFIX")
+
+        jdbc.update("""
+            DELETE FROM photos
+            WHERE user_id IN (SELECT id FROM users WHERE email LIKE ?)
+        """, "%$SEED_EMAIL_SUFFIX")
+
         jdbc.update("""
             DELETE FROM daily_task_checks
             WHERE daily_log_id IN (
@@ -264,8 +418,74 @@ class SeedRunner(
         if (state.currentStreak >= 75) challenge.status = ChallengeStatus.COMPLETED
         challengeRepo.save(challenge)
 
+        seedContentFor(scenario.slug, user.id)
+        seededUserIds.add(user.id)
+
         return user to state
     }
+
+    private fun seedContentFor(slug: String, userId: UUID) {
+        val c = content[slug] ?: return
+
+        for (j in c.journals) {
+            val ts = Instant.now().minusSeconds(j.hoursAgo * 3600)
+            val entry = journalRepo.save(JournalEntry(
+                userId       = userId,
+                body         = j.body,
+                entryDate    = today.minusDays(j.hoursAgo / 24),
+                audienceType = j.audience,
+                createdAt    = ts,
+                updatedAt    = ts,
+            ))
+            journalCount++
+            if (j.audience == F && j.likes > 0) {
+                reactionTargets.add(ReactionTarget(entry.id, userId, j.likes, j.comments))
+            }
+        }
+
+        for (p in c.photos) {
+            val ts = Instant.now().minusSeconds(p.hoursAgo * 3600)
+            photoRepo.save(Photo(
+                userId       = userId,
+                objectKey    = "seed/$slug/${UUID.randomUUID()}.jpg",
+                contentType  = "image/jpeg",
+                caption      = p.caption,
+                audienceType = p.audience,
+                createdAt    = ts,
+                updatedAt    = ts,
+            ))
+            photoCount++
+        }
+    }
+
+    /** Add LIKE reactions (some with a reply) to public journal entries, from other seed users. */
+    private fun seedReactions() {
+        var total = 0
+        for (t in reactionTargets) {
+            val reactors = seededUserIds.filter { it != t.authorId }.take(t.likes)
+            reactors.forEachIndexed { i, reactorId ->
+                val ts = Instant.now().minusSeconds((i + 1) * 1800L)
+                reactionRepo.save(Reaction(
+                    journalEntryId = t.entryId,
+                    userId         = reactorId,
+                    type           = ReactionType.LIKE,
+                    replyBody      = if (i < t.comments) SAMPLE_REPLIES[i % SAMPLE_REPLIES.size] else null,
+                    createdAt      = ts,
+                    updatedAt      = ts,
+                ))
+                total++
+            }
+        }
+        if (total > 0) println("  Seeded $total reactions on public journal entries")
+    }
+
+    private val SAMPLE_REPLIES = listOf(
+        "This is the good stuff. Keep going.",
+        "Needed to read this today.",
+        "Proud of you — for real.",
+        "Same. The mornings get easier, promise.",
+        "Showing up is the whole thing.",
+    )
 
     private fun wireUpFriendships(seededUsers: List<Pair<ScenarioUser, User>>) {
         // Main user ↔ seed users marked friendMain=true

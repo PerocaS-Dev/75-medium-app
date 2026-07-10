@@ -2,6 +2,8 @@ package com.medium75.controller
 
 import com.medium75.model.AudienceType
 import com.medium75.model.Photo
+import com.medium75.model.PhotoReaction
+import com.medium75.model.ReactionType
 import com.medium75.service.PhotoService
 import com.medium75.service.UserService
 import jakarta.servlet.http.HttpServletRequest
@@ -26,7 +28,17 @@ data class PhotoResponse(
 
 data class SignedUrlResponse(val url: String, val expiresInMinutes: Long = 15)
 
+data class PhotoReactionResponse(
+    val id: UUID,
+    val userId: UUID,
+    val type: String,
+    val createdAt: Instant
+)
+
+data class AddPhotoReactionRequest(val type: String)
+
 private fun Photo.toResponse() = PhotoResponse(id, caption, audienceType.name, contentType, createdAt)
+private fun PhotoReaction.toResponse() = PhotoReactionResponse(id, userId, type.name, createdAt)
 
 @RestController
 class PhotoController(
@@ -90,6 +102,33 @@ class PhotoController(
             .header("X-Content-Type-Options", "nosniff")
             .body(bytes)
     }
+
+    // ── reactions ──────────────────────────────────────────────────────────────
+
+    @GetMapping("/api/photos/{id}/reactions")
+    fun listReactions(
+        @PathVariable id: UUID,
+        @AuthenticationPrincipal principal: UserDetails
+    ): List<PhotoReactionResponse> =
+        photoService.listReactions(me(principal), id).map { it.toResponse() }
+
+    @PostMapping("/api/photos/{id}/reactions")
+    fun addReaction(
+        @PathVariable id: UUID,
+        @RequestBody body: AddPhotoReactionRequest,
+        @AuthenticationPrincipal principal: UserDetails
+    ): PhotoReactionResponse {
+        val type = runCatching { ReactionType.valueOf(body.type) }
+            .getOrElse { throw IllegalArgumentException("Invalid reaction type: ${body.type}. Valid: ${ReactionType.entries.joinToString()}") }
+        return photoService.addReaction(me(principal), id, type).toResponse()
+    }
+
+    @DeleteMapping("/api/photos/{id}/reactions")
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    fun removeReaction(
+        @PathVariable id: UUID,
+        @AuthenticationPrincipal principal: UserDetails
+    ) = photoService.removeReaction(me(principal), id)
 
     // ── delete ────────────────────────────────────────────────────────────────
 
