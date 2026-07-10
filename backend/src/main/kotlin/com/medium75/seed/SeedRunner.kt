@@ -36,7 +36,7 @@ class SeedRunner(
     private val photoRepo: PhotoRepository,
     private val reactionRepo: ReactionRepository,
     private val jdbc: JdbcTemplate,
-    @Value("\${PGHOST:localhost}") private val pgHost: String,
+    @Value("\${spring.profiles.active:}") private val activeProfiles: String,
     @Value("\${seed.main-user-email:}") private val mainUserEmail: String,
 ) : ApplicationRunner {
 
@@ -289,9 +289,9 @@ class SeedRunner(
     }
 
     private fun guardAgainstProd() {
-        val host = pgHost.lowercase()
-        if (host != "localhost" && host != "127.0.0.1" && !host.startsWith("::1")) {
-            error("SeedRunner: PGHOST='$pgHost' does not look like localhost. Refusing to seed a non-local database.")
+        val profiles = activeProfiles.lowercase().split(",").map { it.trim() }
+        if ("prod" in profiles) {
+            error("SeedRunner: refusing to seed while the 'prod' profile is active.")
         }
     }
 
