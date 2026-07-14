@@ -12,6 +12,7 @@ import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.web.bind.annotation.*
 import java.time.Instant
 import java.time.LocalDate
+import java.time.temporal.ChronoUnit
 import java.util.UUID
 
 data class UserProfileResponse(
@@ -29,6 +30,10 @@ data class UserProgressResponse(
     val lastStateChangeReason: String?,
     val challengeStatus: String,
     val startDate: LocalDate,
+    // Calendar day of the challenge (Day 1 = start date), in the friend's own time zone.
+    // 0 while the challenge is scheduled but not yet started. This is the day number, not the
+    // streak — the streak counts *completed* days and lags by one during an in-progress day.
+    val dayNumber: Int,
     // Today snapshot — counts only, never which task (privacy by design)
     val todayDoneCount: Int,
     val todayTaskTotal: Int,
@@ -81,6 +86,8 @@ class UserProgressController(
             ?: return ResponseEntity.notFound().build()
 
         val today = dailyCheckOffService.todaySnapshotFor(challenge)
+        val todayLocal = dailyCheckOffService.todayFor(challenge)
+        val dayNumber = (ChronoUnit.DAYS.between(challenge.startDate, todayLocal).toInt() + 1).coerceIn(0, 75)
 
         return ResponseEntity.ok(UserProgressResponse(
             userId                = userId,
@@ -92,6 +99,7 @@ class UserProgressController(
             lastStateChangeReason = challenge.lastStateChangeReason?.name,
             challengeStatus       = challenge.status.name,
             startDate             = challenge.startDate,
+            dayNumber             = dayNumber,
             todayDoneCount        = today.doneCount,
             todayTaskTotal        = today.totalCount,
             lastActivityAt        = today.lastActivityAt

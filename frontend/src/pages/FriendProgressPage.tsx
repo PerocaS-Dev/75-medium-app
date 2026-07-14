@@ -85,7 +85,7 @@ export function FriendProgressPage() {
     );
   }
 
-  const { displayName, currentStreak, bestStreak, todayDoneCount, todayTaskTotal, lastActivityAt } = progress;
+  const { displayName, currentStreak, dayNumber, bestStreak, todayDoneCount, todayTaskTotal, lastActivityAt } = progress;
   const state = deriveState(progress);
   const meta = STATE_META[state];
   const pct = Math.min(100, Math.round((currentStreak / CHALLENGE_LENGTH) * 100));
@@ -105,7 +105,7 @@ export function FriendProgressPage() {
           <h1 className="font-display text-3xl font-medium text-clay-950">{displayName}</h1>
           <p className={`font-sans text-base mt-0.5 flex items-center gap-2 ${meta.text}`}>
             <span className={`inline-block w-2.5 h-2.5 rounded-full ${meta.dot}`} />
-            Day {currentStreak} · {meta.label}
+            Day {dayNumber} · {meta.label}
           </p>
         </div>
       </div>
