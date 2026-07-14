@@ -16,7 +16,7 @@ enum class StateChangeReason {
 class Challenge(
     @Id val id: UUID = UUID.randomUUID(),
     @Column(name = "user_id", nullable = false) val userId: UUID,
-    @Column(name = "start_date", nullable = false) val startDate: LocalDate,
+    @Column(name = "start_date", nullable = false) var startDate: LocalDate,
     @Enumerated(EnumType.STRING) @Column(nullable = false) var status: ChallengeStatus = ChallengeStatus.PENDING,
     @Column(name = "current_streak", nullable = false) var currentStreak: Int = 0,
     @Column(name = "best_streak", nullable = false) var bestStreak: Int = 0,

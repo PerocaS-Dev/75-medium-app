@@ -1,53 +1,10 @@
-import { useEffect, useRef, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { getActiveChallenge, createChallenge, ApiAuthError } from "../api";
+import { Navigate } from "react-router-dom";
 
-function Spinner() {
-  return (
-    <div className="flex items-center justify-center py-20">
-      <div className="w-5 h-5 rounded-full border-2 border-blush-400 border-t-transparent animate-spin" />
-    </div>
-  );
-}
-
+/**
+ * Legacy entry point. Setup is now optional and Today is the home base, so we no longer
+ * auto-create a challenge or force the user to /setup — we simply forward to Today, which
+ * handles every challenge state (none / pending / scheduled / active / ended).
+ */
 export function DashboardPage() {
-  const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-  const ran = useRef(false);
-
-  useEffect(() => {
-    if (ran.current) return;
-    ran.current = true;
-    async function route() {
-      try {
-        let challenge = await getActiveChallenge();
-
-        if (!challenge) {
-          challenge = await createChallenge();
-        }
-
-        if (challenge.status === "PENDING") {
-          navigate("/setup", { replace: true });
-        } else if (challenge.status === "ACTIVE") {
-          navigate("/today", { replace: true });
-        } else {
-          setError("Your challenge has ended. New challenges coming soon.");
-        }
-      } catch (err) {
-        if (err instanceof ApiAuthError) { navigate("/login", { replace: true }); return; }
-        setError("Something went wrong. Please refresh.");
-      }
-    }
-    route();
-  }, [navigate]);
-
-  if (error) {
-    return (
-      <div className="animate-rise">
-        <p className="font-sans text-base text-clay-500">{error}</p>
-      </div>
-    );
-  }
-
-  return <Spinner />;
+  return <Navigate to="/today" replace />;
 }

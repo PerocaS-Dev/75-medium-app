@@ -16,7 +16,11 @@ function isStandalone(): boolean {
 }
 
 function isIos(): boolean {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  const ua = navigator.userAgent;
+  if (/iphone|ipad|ipod/i.test(ua)) return true;
+  // iPadOS 13+ Safari reports a desktop "Macintosh" UA by default. A Mac-like UA that also
+  // reports multi-touch is really an iPad (desktop Safari on macOS has maxTouchPoints 0).
+  return /Macintosh/i.test(ua) && (navigator.maxTouchPoints ?? 0) > 1;
 }
 
 /**

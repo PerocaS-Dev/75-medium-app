@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   getActiveChallenge,
+  createChallenge,
   getTasks,
   addTask,
   deleteTask,
@@ -17,6 +18,16 @@ function Spinner() {
       <div className="w-5 h-5 rounded-full border-2 border-blush-400 border-t-transparent animate-spin" />
     </div>
   );
+}
+
+// Local-date helpers — match the user's device timezone, the same basis the backend validates against.
+function localISODate(offsetDays = 0): string {
+  const d = new Date();
+  d.setDate(d.getDate() + offsetDays);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+function prettyDate(iso: string): string {
+  return new Date(`${iso}T00:00:00`).toLocaleDateString("en-ZA", { weekday: "long", month: "long", day: "numeric" });
 }
 
 function CloseIcon() {
@@ -36,23 +47,28 @@ export function SetupPage() {
   const [isAdding, setIsAdding] = useState(false);
   const [isLocking, setIsLocking] = useState(false);
   const [showConfirm, setShowConfirm] = useState(false);
+  const [startWhen, setStartWhen] = useState<"today" | "tomorrow">("today");
   const [error, setError] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const ran = useRef(false);
 
   useEffect(() => {
+    if (ran.current) return;
+    ran.current = true;
     async function load() {
       try {
-        const challenge = await getActiveChallenge();
-        if (!challenge) {
-          navigate("/dashboard", { replace: true });
-          return;
-        }
-        if (challenge.status === "ACTIVE") {
+        // Setup is opt-in: if the user has no challenge yet, create the PENDING one lazily
+        // now that they've chosen to set up. An already-ACTIVE challenge belongs on Today.
+        let challenge = await getActiveChallenge();
+        if (challenge && challenge.status === "ACTIVE") {
           navigate("/today", { replace: true });
           return;
         }
-        if (challenge.status !== "PENDING") {
-          navigate("/dashboard", { replace: true });
+        if (!challenge) {
+          challenge = await createChallenge();
+        } else if (challenge.status !== "PENDING") {
+          // Ended challenge — nothing to set up here.
+          navigate("/today", { replace: true });
           return;
         }
         setChallengeId(challenge.id);
@@ -118,7 +134,8 @@ export function SetupPage() {
     setIsLocking(true);
     setError(null);
     try {
-      await startChallenge(challengeId);
+      const startDate = startWhen === "today" ? localISODate(0) : localISODate(1);
+      await startChallenge(challengeId, startDate);
       navigate("/today", { replace: true });
     } catch {
       setError("Failed to start. Please try again.");
@@ -244,13 +261,48 @@ export function SetupPage() {
               </li>
             ))}
           </ul>
+
+          {/* Start-day chooser */}
+          <p className="font-sans text-sm font-semibold text-clay-800 mb-2">When does Day 1 begin?</p>
+          <div className="mb-1 grid grid-cols-2 gap-2">
+            {(["today", "tomorrow"] as const).map((when) => {
+              const selected = startWhen === when;
+              return (
+                <button
+                  key={when}
+                  type="button"
+                  onClick={() => setStartWhen(when)}
+                  aria-pressed={selected}
+                  className={[
+                    "rounded-xl border px-4 py-3 text-left transition",
+                    selected
+                      ? "border-blush-400 bg-blush-100 shadow-ring"
+                      : "border-clay-200 bg-paper hover:border-clay-300",
+                  ].join(" ")}
+                >
+                  <span className="block font-sans text-sm font-semibold text-clay-950 capitalize">
+                    {when === "today" ? "Start today" : "Start tomorrow"}
+                  </span>
+                  <span className="block font-sans text-caption text-clay-500 mt-0.5">
+                    {prettyDate(when === "today" ? localISODate(0) : localISODate(1))}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="font-sans text-caption text-clay-500 mb-5">
+            {startWhen === "today"
+              ? "Today counts as Day 1 — your check-offs start right away."
+              : "A clean Day 1 tomorrow. Your tasks lock now, but the clock starts in the morning."}
+          </p>
+
           <div className="flex flex-col gap-2">
             <button
               onClick={handleStart}
               disabled={isLocking}
               className="w-full h-14 rounded-xl bg-blush-500 text-lg font-bold text-clay-950 shadow-soft transition hover:bg-blush-600 active:scale-[.99] disabled:opacity-50"
             >
-              {isLocking ? "Starting…" : "Lock & begin day 1"}
+              {isLocking ? "Starting…" : startWhen === "today" ? "Lock & begin day 1" : "Lock & schedule day 1"}
             </button>
             <button
               onClick={() => setShowConfirm(false)}

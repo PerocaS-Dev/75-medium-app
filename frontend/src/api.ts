@@ -93,8 +93,19 @@ export async function reorderTasks(challengeId: string, orderedIds: string[]): P
   if (!res.ok) throw new Error("Failed to reorder tasks");
 }
 
-export async function startChallenge(challengeId: string): Promise<ChallengeResponse> {
-  const res = await fetch(`/api/challenges/${challengeId}/start`, { method: "POST" });
+/**
+ * Locks tasks and starts the challenge. `startDate` (ISO yyyy-MM-dd) chooses Day 1 and must be
+ * today or tomorrow in the user's time zone; omit to start today.
+ */
+export async function startChallenge(
+  challengeId: string,
+  startDate?: string
+): Promise<ChallengeResponse> {
+  const res = await fetch(`/api/challenges/${challengeId}/start`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(startDate ? { startDate } : {}),
+  });
   assertAuth(res);
   if (!res.ok) throw new Error("Failed to start challenge");
   return res.json();

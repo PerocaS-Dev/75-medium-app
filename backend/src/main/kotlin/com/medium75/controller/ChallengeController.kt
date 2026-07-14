@@ -22,6 +22,10 @@ data class ChallengeResponse(
     val lastStateChangeReason: String?
 )
 
+data class StartChallengeRequest(
+    val startDate: LocalDate? = null
+)
+
 @RestController
 @RequestMapping("/api/challenges")
 class ChallengeController(
@@ -65,9 +69,10 @@ class ChallengeController(
     @PostMapping("/{id}/start")
     fun start(
         @PathVariable id: UUID,
+        @RequestBody(required = false) body: StartChallengeRequest?,
         @AuthenticationPrincipal principal: UserDetails
     ): ChallengeResponse {
         val userId = currentUserId(principal)
-        return challengeService.startChallenge(id, userId).toResponse()
+        return challengeService.startChallenge(id, userId, body?.startDate).toResponse()
     }
 }

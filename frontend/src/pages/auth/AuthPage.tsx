@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useLogin } from "@refinedev/core";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { InstallHint } from "../../components/InstallHint";
 import "./auth-page.css";
 
@@ -314,8 +314,8 @@ export function AuthPage({ initialTab }: { initialTab: Tab }) {
 
           <p className="mt-6 text-center text-caption leading-relaxed text-clay-500">
             By continuing you agree to the{" "}
-            <a href="#terms" className="font-semibold text-clay-700">Terms</a> &amp;{" "}
-            <a href="#privacy" className="font-semibold text-clay-700">Privacy</a>. POPIA-compliant.
+            <Link to="/terms" className="font-semibold text-clay-700 hover:text-clay-950">Terms</Link> &amp;{" "}
+            <Link to="/terms#privacy" className="font-semibold text-clay-700 hover:text-clay-950">Privacy</Link>. POPIA-compliant.
           </p>
 
           <InstallHint />

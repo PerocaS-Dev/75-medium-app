@@ -28,6 +28,7 @@ class DailyCheckOffService(
         val challenge = challengeService.requireOwned(challengeId, userId)
         require(challenge.status == ChallengeStatus.ACTIVE) { "Challenge is not active" }
         val today = todayFor(challenge)
+        requireStarted(challenge, today)
         return getOrCreateLog(challenge, today)
     }
 
@@ -62,6 +63,7 @@ class DailyCheckOffService(
         require(task.locked) { "Task is not locked — challenge has not started" }
 
         val today = todayFor(challenge)
+        requireStarted(challenge, today)
         val log = getOrCreateLog(challenge, today)
 
         if (!dailyTaskCheckRepo.existsByDailyLogIdAndTaskDefinitionId(log.id, taskId)) {
@@ -77,6 +79,7 @@ class DailyCheckOffService(
         require(challenge.status == ChallengeStatus.ACTIVE) { "Challenge is not active" }
 
         val today = todayFor(challenge)
+        requireStarted(challenge, today)
         val log = dailyLogRepo.findByChallengeIdAndLogDate(challengeId, today)
             ?: return getOrCreateLog(challenge, today)
 
@@ -109,6 +112,15 @@ class DailyCheckOffService(
         log.tasksTotalCount     = total
         log.updatedAt           = Instant.now()
         return dailyLogRepo.save(log)
+    }
+
+    /**
+     * A Scheduled challenge (ACTIVE with a future startDate) must not accept check-offs before
+     * Day 1 — otherwise we'd create orphan pre-start DailyLogs that the daily-close engine never
+     * closes (it skips while yesterday < startDate). This guard protects the streak from them.
+     */
+    private fun requireStarted(challenge: Challenge, today: LocalDate) {
+        require(!today.isBefore(challenge.startDate)) { "Challenge has not started yet" }
     }
 
     fun todayFor(challenge: Challenge): LocalDate {

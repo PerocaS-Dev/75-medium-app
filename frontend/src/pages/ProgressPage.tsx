@@ -49,7 +49,8 @@ export function ProgressPage() {
       try {
         const c = await getActiveChallenge();
         if (!c || (c.status !== "ACTIVE" && c.status !== "COMPLETED")) {
-          navigate("/dashboard", { replace: true });
+          // No active/completed challenge yet — render a friendly empty state instead of erroring.
+          setChallenge(null);
           return;
         }
         if (c.status === "COMPLETED") {
@@ -72,7 +73,25 @@ export function ProgressPage() {
 
   if (isLoading) return <Spinner />;
   if (error) return <p className="font-sans text-sm text-rust-600 p-6">{error}</p>;
-  if (!challenge) return null;
+  if (!challenge) {
+    return (
+      <div className="animate-rise">
+        <p className="text-caption font-semibold text-clay-400 tracking-widest uppercase mb-1">Progress</p>
+        <h1 className="font-display text-3xl font-medium text-clay-950 mb-6">Nothing to track yet</h1>
+        <div className="rounded-xl border border-clay-200 bg-paper shadow-soft px-6 py-8 text-center flex flex-col items-center gap-3">
+          <p className="font-sans text-base text-clay-500 max-w-[300px]">
+            Once you set up and start your challenge, your streak, tiers and buffer will show up here.
+          </p>
+          <button
+            onClick={() => navigate("/today")}
+            className="mt-2 h-12 rounded-xl bg-clay-100 px-6 font-sans font-semibold text-clay-700 hover:bg-clay-200 transition"
+          >
+            Go to Today
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   const { currentStreak, currentTier, missBufferRemaining, bestStreak, lastStateChangeReason } = challenge;
   const isComplete = challenge.status === "COMPLETED";

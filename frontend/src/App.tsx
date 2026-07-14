@@ -15,6 +15,7 @@ import { JournalPage } from "./pages/JournalPage";
 import { JournalComposePage } from "./pages/JournalComposePage";
 import { PhotoPage } from "./pages/PhotoPage";
 import { PhotoUploadPage } from "./pages/PhotoUploadPage";
+import { TermsPage } from "./pages/TermsPage";
 
 function Spinner() {
   return (
@@ -34,7 +35,7 @@ function ProtectedRoute() {
 function PublicRoute() {
   const { data, isLoading } = useIsAuthenticated();
   if (isLoading) return <Spinner />;
-  if (data?.authenticated) return <Navigate to="/dashboard" replace />;
+  if (data?.authenticated) return <Navigate to="/today" replace />;
   return <Outlet />;
 }
 
@@ -66,7 +67,8 @@ export default function App() {
               <Route path="/friends/:userId" element={<FriendProgressPage />} />
             </Route>
           </Route>
-          <Route path="/" element={<Navigate to="/dashboard" replace />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/" element={<Navigate to="/today" replace />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Refine>
