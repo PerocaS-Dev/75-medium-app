@@ -30,18 +30,6 @@ function CheckIcon() {
   );
 }
 
-// Day number = calendar days since the start date + 1 (Day 1 = start date), in the
-// user's local time zone. Uses date parts (not Date parsing) to avoid timezone drift.
-// This is independent of the streak count, which lags by a day during an in-progress day.
-function dayNumber(startDateISO: string): number {
-  const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-  const [y, m, d] = startDateISO.split("-").map(Number);
-  const start = new Date(y, m - 1, d);
-  const diffDays = Math.round((today.getTime() - start.getTime()) / 86_400_000);
-  return Math.max(1, diffDays + 1);
-}
-
 export function TodayPage() {
   const navigate = useNavigate();
   const [challengeId, setChallengeId] = useState<string | null>(null);
@@ -63,7 +51,8 @@ export function TodayPage() {
           return;
         }
         setChallengeId(challenge.id);
-        setCurrentDay(dayNumber(challenge.startDate));
+        // Day number is a simple counter off completed days: the day you're on = days banked + 1.
+        setCurrentDay(Math.min(75, (challenge.currentStreak || 0) + 1));
 
         const [taskList, checks] = await Promise.all([
           getTasks(challenge.id),
