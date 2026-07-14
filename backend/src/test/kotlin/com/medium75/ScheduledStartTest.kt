@@ -23,6 +23,7 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers.status
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
+import java.time.ZoneOffset
 import java.util.UUID
 
 /**
@@ -68,7 +69,7 @@ class ScheduledStartTest {
     fun `scheduled-tomorrow challenge rejects check-off and creates no daily log`() {
         val user = newUser()
         // "UTC" user, so the server's notion of today is LocalDate.now(UTC); tomorrow is in the future.
-        val challenge = activeChallenge(user.id, LocalDate.now().plusDays(1))
+        val challenge = activeChallenge(user.id, LocalDate.now(ZoneOffset.UTC).plusDays(1))
         val task = lockedTask(challenge.id)
         val session = login(user.email)
 
@@ -77,13 +78,13 @@ class ScheduledStartTest {
         ).andExpect(status().isBadRequest)
 
         // The guard must not have created a pre-start DailyLog — that's the streak-protecting invariant.
-        assertNull(dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, LocalDate.now()))
+        assertNull(dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, LocalDate.now(ZoneOffset.UTC)))
     }
 
     @Test
     fun `start-today challenge accepts check-off`() {
         val user = newUser()
-        val challenge = activeChallenge(user.id, LocalDate.now())
+        val challenge = activeChallenge(user.id, LocalDate.now(ZoneOffset.UTC))
         val task = lockedTask(challenge.id)
         val session = login(user.email)
 
@@ -91,14 +92,14 @@ class ScheduledStartTest {
             post("/api/challenges/${challenge.id}/today/tasks/${task.id}/check").session(session)
         ).andExpect(status().isOk)
 
-        val log = dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, LocalDate.now())
+        val log = dailyLogRepo.findByChallengeIdAndLogDate(challenge.id, LocalDate.now(ZoneOffset.UTC))
         assertEquals(1, log?.tasksCompletedCount)
     }
 
     @Test
     fun `today checks endpoint is rejected for a scheduled challenge`() {
         val user = newUser()
-        val challenge = activeChallenge(user.id, LocalDate.now().plusDays(2))
+        val challenge = activeChallenge(user.id, LocalDate.now(ZoneOffset.UTC).plusDays(2))
         lockedTask(challenge.id)
         val session = login(user.email)
 

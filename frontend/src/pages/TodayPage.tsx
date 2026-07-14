@@ -62,7 +62,6 @@ export function TodayPage() {
   const isActive = challenge?.status === "ACTIVE";
   // "Scheduled": locked & ACTIVE, but Day 1 is still in the future.
   const isScheduled = isActive && challenge!.startDate > today;
-  const isLive = isActive && challenge!.startDate <= today;
 
   useEffect(() => {
     if (ran.current) return;
@@ -231,7 +230,8 @@ export function TodayPage() {
   }
 
   // ── Live — the normal daily check-off ────────────────────────────────────────
-  const currentDay = Math.max(1, isLive ? daysBetween(challenge.startDate, today) + 1 : 1);
+  // Day number is a simple counter off completed days: the day you're on = days banked + 1.
+  const currentDay = Math.min(75, (challenge.currentStreak || 0) + 1);
   const doneCount = tasks.filter((t) => t.checked).length;
   const totalCount = tasks.length;
   const allDone = totalCount > 0 && doneCount === totalCount;
