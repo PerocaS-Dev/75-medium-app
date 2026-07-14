@@ -52,7 +52,7 @@ function FriendsIcon() {
 
 function BellIcon() {
   return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
       <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
       <path d="M13.73 21a2 2 0 0 1-3.46 0" />
     </svg>
@@ -76,7 +76,6 @@ export function AppShell() {
   // Unread notification badge: poll gently, refresh on navigation, and optimistically
   // clear when the feed is open (opening it marks everything read server-side).
   const [unread, setUnread] = useState(0);
-  const onFeed = location.pathname === "/notifications";
   useEffect(() => {
     let alive = true;
     const refresh = () => {
@@ -111,11 +110,11 @@ export function AppShell() {
             <Link
               to="/notifications"
               aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
-              className={`relative transition-colors ${onFeed ? "text-clay-950" : "text-clay-500 hover:text-clay-800"}`}
+              className="relative text-clay-950 transition-colors hover:text-clay-700"
             >
               <BellIcon />
               {unread > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-pill bg-blush-500 text-white text-[10px] font-bold flex items-center justify-center shadow-soft">
+                <span className="absolute -top-1.5 -right-2 min-w-[14px] h-[14px] px-1 rounded-pill bg-blush-500 text-white text-[9px] font-bold flex items-center justify-center shadow-soft">
                   {unread > 9 ? "9+" : unread}
                 </span>
               )}
