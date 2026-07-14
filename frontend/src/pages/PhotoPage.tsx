@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useGetIdentity } from "@refinedev/core";
 import {
   getMyPhotos,
@@ -139,15 +139,27 @@ function PopiaGate() {
 
 export function PhotoPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get("photo");
   const { data: identity } = useGetIdentity<UserIdentity>();
   const [entries, setEntries] = useState<PhotoEntry[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [lightbox, setLightbox] = useState<string | null>(null);
   const [deletingIds, setDeletingIds] = useState<Set<string>>(new Set());
+  const [highlightOn, setHighlightOn] = useState(true);
+  const highlightRef = useRef<HTMLDivElement>(null);
   const loadedRef = useRef(false);
 
   const hasConsent = !!identity?.popiaConsentAt;
+
+  // Deep-linked photo: scroll into view and fade a highlight ring once photos are loaded.
+  useEffect(() => {
+    if (!highlightId || entries.length === 0) return;
+    highlightRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => setHighlightOn(false), 2200);
+    return () => clearTimeout(t);
+  }, [highlightId, entries.length]);
 
   useEffect(() => {
     if (!hasConsent || loadedRef.current) return;
@@ -219,8 +231,14 @@ export function PhotoPage() {
       ) : (
         <div className="grid grid-cols-2 gap-3">
           {entries.map((e) => (
-            <div key={e.photo.id} className="flex flex-col gap-1.5">
-              <div className="relative aspect-square rounded-xl overflow-hidden bg-clay-100">
+            <div
+              key={e.photo.id}
+              ref={e.photo.id === highlightId ? highlightRef : undefined}
+              className="flex flex-col gap-1.5"
+            >
+              <div className={`relative aspect-square rounded-xl overflow-hidden bg-clay-100 transition-all duration-500 ${
+                e.photo.id === highlightId && highlightOn ? "ring-2 ring-blush-400 ring-offset-2 ring-offset-clay-50" : ""
+              }`}>
                 <ProtectedImage
                   src={e.url}
                   alt={e.photo.caption ?? "Progress photo"}

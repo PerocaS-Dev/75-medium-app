@@ -14,7 +14,8 @@ import java.util.UUID
 class JournalService(
     private val journalRepo: JournalEntryRepository,
     private val reactionRepo: ReactionRepository,
-    private val friendshipService: FriendshipService
+    private val friendshipService: FriendshipService,
+    private val notificationService: NotificationService
 ) {
     // ── visibility helpers ───────────────────────────────────────────────────
 
@@ -76,7 +77,9 @@ class JournalService(
         requireVisible(actorId, entry)                           // layer 2
 
         val existing = reactionRepo.findByJournalEntryIdAndUserId(entryId, actorId)
-        return if (existing != null) {
+        val isNewReaction = existing == null
+        val previousReply = existing?.replyBody
+        val saved = if (existing != null) {
             existing.type      = type
             existing.replyBody = replyBody
             existing.updatedAt = Instant.now()
@@ -84,6 +87,16 @@ class JournalService(
         } else {
             reactionRepo.save(Reaction(journalEntryId = entryId, userId = actorId, type = type, replyBody = replyBody))
         }
+
+        // Notify the entry owner. A comment (a newly-added/changed reply) supersedes a bare
+        // reaction in a single call; repeat reaction toggles don't re-notify.
+        val isNewComment = !replyBody.isNullOrBlank() && replyBody != previousReply
+        if (isNewComment) {
+            notificationService.journalComment(entry.userId, actorId, entryId, replyBody)
+        } else if (isNewReaction) {
+            notificationService.journalReaction(entry.userId, actorId, entryId, type)
+        }
+        return saved
     }
 
     @Transactional

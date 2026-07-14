@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { useLogout, useGetIdentity } from "@refinedev/core";
 import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
 import type { UserIdentity } from "../authProvider";
+import { getUnreadNotificationCount } from "../api";
 
 function ChecklistIcon() {
   return (
@@ -48,7 +50,17 @@ function FriendsIcon() {
   );
 }
 
-const TAB_PREFIXES = ["/today", "/progress", "/photos", "/journal", "/friends"];
+function BellIcon() {
+  return (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+      <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+    </svg>
+  );
+}
+
+const TAB_PREFIXES = ["/today", "/progress", "/photos", "/journal", "/friends", "/notifications"];
+const UNREAD_POLL_MS = 45_000;
 
 export function AppShell() {
   const { mutateAsync: logout } = useLogout();
@@ -60,6 +72,21 @@ export function AppShell() {
     await logout({});
     navigate("/login");
   };
+
+  // Unread notification badge: poll gently, refresh on navigation, and optimistically
+  // clear when the feed is open (opening it marks everything read server-side).
+  const [unread, setUnread] = useState(0);
+  const onFeed = location.pathname === "/notifications";
+  useEffect(() => {
+    let alive = true;
+    const refresh = () => {
+      if (location.pathname === "/notifications") { setUnread(0); return; }
+      getUnreadNotificationCount().then((c) => { if (alive) setUnread(c); }).catch(() => {});
+    };
+    refresh();
+    const t = setInterval(refresh, UNREAD_POLL_MS);
+    return () => { alive = false; clearInterval(t); };
+  }, [location.pathname]);
 
   const showTabs = TAB_PREFIXES.some(
     (p) => location.pathname === p || location.pathname.startsWith(p + "/")
@@ -81,6 +108,18 @@ export function AppShell() {
             75 Medium
           </Link>
           <div className="flex items-center gap-4">
+            <Link
+              to="/notifications"
+              aria-label={unread > 0 ? `Notifications, ${unread} unread` : "Notifications"}
+              className={`relative transition-colors ${onFeed ? "text-clay-950" : "text-clay-500 hover:text-clay-800"}`}
+            >
+              <BellIcon />
+              {unread > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-[18px] px-1 rounded-pill bg-blush-500 text-white text-[10px] font-bold flex items-center justify-center shadow-soft">
+                  {unread > 9 ? "9+" : unread}
+                </span>
+              )}
+            </Link>
             {identity?.displayName && (
               <span className="font-sans text-sm text-clay-500 hidden sm:block">
                 {identity.displayName}

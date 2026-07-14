@@ -13,7 +13,8 @@ import java.util.UUID
 @Service
 class FriendshipService(
     private val friendshipRepo: FriendshipRepository,
-    private val userRepo: UserRepository
+    private val userRepo: UserRepository,
+    private val notificationService: NotificationService
 ) {
     // ── visibility gate ──────────────────────────────────────────────────────
 
@@ -50,7 +51,9 @@ class FriendshipService(
                 FriendshipStatus.BLOCKED  -> throw AccessDeniedException("Cannot send request")
             }
         }
-        return friendshipRepo.save(Friendship(requesterId = requesterId, addresseeId = addresseeId))
+        val saved = friendshipRepo.save(Friendship(requesterId = requesterId, addresseeId = addresseeId))
+        notificationService.friendRequest(addresseeId, requesterId, saved.id)
+        return saved
     }
 
     @Transactional
@@ -60,7 +63,10 @@ class FriendshipService(
         require(f.status == FriendshipStatus.PENDING) { "Request is not pending" }
         f.status    = FriendshipStatus.ACCEPTED
         f.updatedAt = Instant.now()
-        return friendshipRepo.save(f)
+        val saved = friendshipRepo.save(f)
+        // Notify the original requester that their request was accepted.
+        notificationService.friendAccept(f.requesterId, userId)
+        return saved
     }
 
     @Transactional

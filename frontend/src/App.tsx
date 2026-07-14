@@ -16,6 +16,7 @@ import { JournalComposePage } from "./pages/JournalComposePage";
 import { PhotoPage } from "./pages/PhotoPage";
 import { PhotoUploadPage } from "./pages/PhotoUploadPage";
 import { TermsPage } from "./pages/TermsPage";
+import { NotificationsPage } from "./pages/NotificationsPage";
 
 function Spinner() {
   return (
@@ -65,6 +66,7 @@ export default function App() {
               <Route path="/journal/:id/edit" element={<JournalComposePage />} />
               <Route path="/friends" element={<FriendsPage />} />
               <Route path="/friends/:userId" element={<FriendProgressPage />} />
+              <Route path="/notifications" element={<NotificationsPage />} />
             </Route>
           </Route>
           <Route path="/terms" element={<TermsPage />} />

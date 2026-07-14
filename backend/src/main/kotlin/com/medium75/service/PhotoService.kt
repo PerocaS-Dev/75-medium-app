@@ -22,7 +22,8 @@ class PhotoService(
     private val friendshipService: FriendshipService,
     private val signingService: PhotoSigningService,
     private val watermarkService: WatermarkService,
-    private val userRepo: UserRepository
+    private val userRepo: UserRepository,
+    private val notificationService: NotificationService
 ) {
     private val allowedContentTypes = setOf("image/jpeg", "image/jpg", "image/png")
 
@@ -129,6 +130,8 @@ class PhotoService(
             existing.updatedAt = Instant.now()
             photoReactionRepo.save(existing)
         } else {
+            // Notify the owner only on a genuinely new reaction (not on toggles/changes).
+            notificationService.photoReaction(photo.userId, actorId, photoId, type)
             photoReactionRepo.save(PhotoReaction(photoId = photoId, userId = actorId, type = type))
         }
     }

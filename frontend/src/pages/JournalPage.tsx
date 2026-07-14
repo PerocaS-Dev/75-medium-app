@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate, useSearchParams, Link } from "react-router-dom";
 import {
   getMyJournals,
   getReactions,
@@ -54,29 +54,38 @@ function ReactionTally({ reactions }: { reactions: ReactionResponse[] }) {
 interface EntryCardProps {
   entry: JournalEntryResponse;
   onDeleted: (id: string) => void;
+  autoOpen?: boolean;
 }
 
-function EntryCard({ entry, onDeleted }: EntryCardProps) {
+function EntryCard({ entry, onDeleted, autoOpen = false }: EntryCardProps) {
   const navigate = useNavigate();
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(autoOpen);
   const [reactions, setReactions] = useState<ReactionResponse[] | null>(null);
   const [loadingReactions, setLoadingReactions] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [highlight, setHighlight] = useState(autoOpen);
+  const cardRef = useRef<HTMLDivElement>(null);
 
-  const toggle = async () => {
-    const next = !expanded;
-    setExpanded(next);
-    if (next && reactions === null) {
-      setLoadingReactions(true);
-      try {
-        setReactions(await getReactions(entry.id));
-      } catch {
-        setReactions([]);
-      } finally {
-        setLoadingReactions(false);
-      }
-    }
-  };
+  // Load reactions whenever the card is open and they haven't been fetched yet
+  // (covers both manual expand and deep-link auto-open).
+  useEffect(() => {
+    if (!expanded || reactions !== null || loadingReactions) return;
+    setLoadingReactions(true);
+    getReactions(entry.id)
+      .then(setReactions)
+      .catch(() => setReactions([]))
+      .finally(() => setLoadingReactions(false));
+  }, [expanded, reactions, loadingReactions, entry.id]);
+
+  // Deep-linked entry: scroll into view and fade a highlight ring.
+  useEffect(() => {
+    if (!autoOpen) return;
+    cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    const t = setTimeout(() => setHighlight(false), 2200);
+    return () => clearTimeout(t);
+  }, [autoOpen]);
+
+  const toggle = () => setExpanded((v) => !v);
 
   const handleDelete = async () => {
     if (!window.confirm("Delete this entry?")) return;
@@ -90,7 +99,12 @@ function EntryCard({ entry, onDeleted }: EntryCardProps) {
   };
 
   return (
-    <div className="rounded-xl bg-paper border border-clay-200 shadow-soft overflow-hidden">
+    <div
+      ref={cardRef}
+      className={`rounded-xl bg-paper border shadow-soft overflow-hidden transition-all duration-500 ${
+        highlight ? "border-blush-400 shadow-ring" : "border-clay-200"
+      }`}
+    >
       <button
         onClick={toggle}
         className="w-full text-left px-4 pt-3 pb-3 flex items-start justify-between gap-3"
@@ -155,6 +169,8 @@ function EntryCard({ entry, onDeleted }: EntryCardProps) {
 
 export function JournalPage() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const highlightId = searchParams.get("entry");
   const [entries, setEntries] = useState<JournalEntryResponse[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -208,6 +224,7 @@ export function JournalPage() {
             <EntryCard
               key={entry.id}
               entry={entry}
+              autoOpen={entry.id === highlightId}
               onDeleted={(id) => setEntries((prev) => prev.filter((e) => e.id !== id))}
             />
           ))}

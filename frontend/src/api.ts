@@ -339,6 +339,48 @@ export async function removeReaction(entryId: string): Promise<void> {
   if (!res.ok) throw new Error("Failed to remove reaction");
 }
 
+// ── Notifications ───────────────────────────────────────────────────────────────
+
+export type NotificationType =
+  | "JOURNAL_REACTION"
+  | "JOURNAL_COMMENT"
+  | "PHOTO_REACTION"
+  | "FRIEND_REQUEST"
+  | "FRIEND_ACCEPT";
+
+export interface NotificationResponse {
+  id: string;
+  type: NotificationType;
+  actorId: string;
+  actorDisplayName: string;
+  reactionType: string | null;
+  targetId: string | null;
+  preview: string | null;
+  read: boolean;
+  createdAt: string;
+}
+
+export async function getNotifications(): Promise<NotificationResponse[]> {
+  const res = await fetch("/api/notifications");
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load notifications");
+  return res.json();
+}
+
+export async function getUnreadNotificationCount(): Promise<number> {
+  const res = await fetch("/api/notifications/unread-count");
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to load unread count");
+  const data: { count: number } = await res.json();
+  return data.count;
+}
+
+export async function markNotificationsRead(): Promise<void> {
+  const res = await fetch("/api/notifications/mark-read", { method: "POST" });
+  assertAuth(res);
+  if (!res.ok) throw new Error("Failed to mark notifications read");
+}
+
 // ── Photos ────────────────────────────────────────────────────────────────────
 
 export interface PhotoResponse {
