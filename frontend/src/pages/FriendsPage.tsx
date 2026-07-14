@@ -476,7 +476,7 @@ function CircleTab(props: CircleProps) {
                       <StateDot state={state} />
                     </p>
                     <p className="font-sans text-caption text-clay-500">
-                      {f.progress ? `Day ${f.progress.currentStreak} · ${meta.label}` : "No active challenge"}
+                      {f.progress ? `Day ${f.progress.dayNumber} · ${meta.label}` : "No active challenge"}
                     </p>
                   </div>
                   <button
@@ -604,7 +604,7 @@ export function FriendsPage() {
       friends.map((f) => ({
         id: f.friendId,
         name: f.profile?.displayName ?? "Unknown",
-        day: f.progress?.currentStreak ?? 0,
+        day: f.progress?.dayNumber ?? 0,
       })),
     [friends]
   );

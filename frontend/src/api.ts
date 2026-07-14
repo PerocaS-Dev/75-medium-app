@@ -140,6 +140,7 @@ export interface UserProgressResponse {
   lastStateChangeReason: string | null;
   challengeStatus: string;
   startDate: string;
+  dayNumber: number;
   todayDoneCount: number;
   todayTaskTotal: number;
   lastActivityAt: string | null;
